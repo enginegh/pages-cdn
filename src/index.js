@@ -50,7 +50,7 @@ async function main() {
             },
         ],
     });
-    const limit = config.downloader.limit || 100;
+    let limit = config.downloader.limit || 100;
     logger.info(`Total queue: ${total_queue}, queue limit: ${limit}`);
     while (limit) {
         // find and lock a pending track, set locked_by to "me" and locked_until to now + 1 hour
