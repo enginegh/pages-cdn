@@ -27,11 +27,12 @@ jobs:
               with:
                   cache: npm
 
-            - name: Install dependencies and ffmpeg
+            - name: Install dependencies
               run: |
                   npm install
-                  sudo apt-get install ffmpeg
-                  whereis ffmpeg
+            
+            - name: Setup FFmpeg
+              uses: FedericoCarboni/setup-ffmpeg@v2
 
             - name: Download artifact
               uses: dawidd6/action-download-artifact@v2
