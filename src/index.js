@@ -41,17 +41,29 @@ async function main() {
     const manifest = [];
     const succeeded = [];
 
-    logger.info("Queueing downloads");
-    let limit = config.downloader.limit || 100;
+    const total_queue = await queuecol.countDocuments({
+        $or: [
+            { status: "pending" },
+            {
+                status: "locked",
+                locked_until: { $lte: new Date() },
+            },
+        ],
+    });
+    const limit = config.downloader.limit || 100;
+    logger.info(`Total queue: ${total_queue}, queue limit: ${limit}`);
     while (limit) {
         // find and lock a pending track, set locked_by to "me" and locked_until to now + 1 hour
         const doc = await queuecol.findOneAndUpdate(
             // find a pending track that is not locked and locked_until is in the past or not set
+            // the status should be pending, but if it's locked, then the locked_until should be in the past
             {
-                status: "pending",
                 $or: [
-                    { locked_until: { $exists: false } },
-                    { locked_until: { $lte: new Date() } },
+                    { status: "pending" },
+                    {
+                        status: "locked",
+                        locked_until: { $lte: new Date() },
+                    },
                 ],
             },
             {
