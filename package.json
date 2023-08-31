@@ -1,0 +1,30 @@
+{
+    "dependencies": {
+        "axios": "^1.5.0",
+        "blake3-wasm": "^2.1.5",
+        "browser-id3-writer": "^6.0.0",
+        "mime": "^3.0.0",
+        "mongodb": "^6.0.0",
+        "node-id3": "^0.2.6",
+        "node-youtube-music": "^0.10.3",
+        "p-queue": "^7.3.4",
+        "smol-toml": "^1.1.2",
+        "winston": "^3.10.0",
+        "ytdl-core": "^4.11.5"
+    },
+    "type": "module",
+    "devDependencies": {
+        "esbuild": "^0.19.2"
+    },
+    "name": "pages-cdn",
+    "version": "1.0.0",
+    "description": "A video metadata melter",
+    "main": "src",
+    "scripts": {
+        "test": "node src",
+        "start": "node src",
+        "pretty": "npx prettier --write . --ignore-path .gitignore"
+    },
+    "author": "",
+    "license": "MIT"
+}

@@ -1,0 +1,54 @@
+name: Tests deployment script
+
+on:
+    push:
+        branches:
+            - main
+    workflow_dispatch:
+    schedule:
+        - cron: "*/30 * * * *"
+
+concurrency:
+    group: ${{ github.workflow }}
+
+env:
+    DEBUG: ${{ vars.DEBUG }}
+
+jobs:
+    check-content:
+        runs-on: ubuntu-22.04
+        steps:
+            - name: Checkout Repo
+              uses: actions/checkout@v3
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v3
+              id: setup-node
+              with:
+                  cache: npm
+
+            - name: Install dependencies and ffmpeg
+              run: |
+                  npm install
+                  sudo apt-get install ffmpeg
+
+            - name: Download artifact
+              uses: dawidd6/action-download-artifact@v2
+              with:
+                  name: cache
+                  workflow_conclusion: ""
+                  check_artifacts: true
+                  if_no_artifact_found: warn
+
+            - name: Run test script
+              timeout-minutes: 60
+              env:
+                  CONFIG: ${{ secrets.CONFIG }}
+              run: |
+                  npm start
+
+            - name: Upload artifacts
+              uses: actions/upload-artifact@v3
+              with:
+                  name: cache
+                  path: .cache.*
