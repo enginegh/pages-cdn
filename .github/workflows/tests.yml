@@ -15,7 +15,8 @@ env:
     DEBUG: ${{ vars.DEBUG }}
 
 jobs:
-    check-content:
+    test-scrip:
+        name: Test script
         runs-on: ubuntu-22.04
         steps:
             - name: Checkout Repo
