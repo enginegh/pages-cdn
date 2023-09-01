@@ -72,7 +72,7 @@ export default class TrackDownloader {
         );
 
         let downloadDir = path.resolve(
-            config.downloader.download_dir || "./tracks",
+            config.download_dir || "./tracks",
         );
         if (existsSync(downloadDir)) {
             rmSync(downloadDir, { recursive: true });

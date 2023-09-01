@@ -2,10 +2,10 @@ import { parse } from "smol-toml";
 import { readFileSync, unlinkSync, writeFileSync } from "fs";
 import logger from "./lib/logger.js";
 import PQueue from "p-queue";
-import { MongoClient } from "mongodb";
 import TrackDownloader from "./downloader.js";
 import Cfetch from "./cpages/index.js";
 import MongoQueue from "./queue.js";
+import axios from "axios";
 
 async function main() {
     logger.info("Starting");
@@ -17,7 +17,7 @@ async function main() {
     const mongoqueue = await MongoQueue.fromMongoURI(config.mongodb.uri, config.mongodb.queue_db, config.mongodb.storage_db);
 
     const queue = new PQueue({
-        concurrency: config.downloader.concurrency || 1,
+        concurrency: config.concurrency || 1,
         autoStart: false,
     });
 
@@ -26,7 +26,7 @@ async function main() {
 
     const stats = await mongoqueue.stats();
 
-    let limit = config.downloader.limit || 1;
+    let limit = config.limit || 1;
     logger.info(`Total: ${stats.total}, Pending: ${stats.pending}, Locked: ${stats.locked}, Limit: ${limit}, Concurrency: ${queue.concurrency}`);
     while (limit) {
         const doc = await mongoqueue.next();
@@ -130,8 +130,13 @@ async function main() {
     logger.debug("Removing download directory");
     downloader.deleteDownloadDir();
 
-    await mongoqueue.close();
+    if (config.webhook) {
+        logger.info("Sending webhook");
+        const webhook = config.webhook.replace("{url}", baseUrl + "/manifest.json");
+        await axios.get(webhook);
+    }
 
+    await mongoqueue.close();
     logger.info("Finished");
 }
 
