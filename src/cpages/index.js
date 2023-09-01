@@ -309,8 +309,7 @@ export default class Cfetch {
             skipped > 0 ? `(${skipped} already uploaded) ` : "";
 
         logger.info(
-            `CfPages Upload complete: ${
-                sortedFiles.length
+            `CfPages Upload complete: ${sortedFiles.length
             } files ${skippedMessage}${this.formatTime(uploadMs)}`,
         );
 
@@ -405,11 +404,9 @@ export default class Cfetch {
 
                         if (filestat.size > MAX_ASSET_SIZE) {
                             throw new Error(
-                                `Error: Pages only supports files up to ${prettyBytes(
-                                    MAX_ASSET_SIZE,
-                                )} in size\n${name} is ${prettyBytes(
-                                    filestat.size,
-                                )} in size`,
+                                `Error: Pages only supports files up to ${MAX_ASSET_SIZE
+                                } in size\n${name} is ${filestat.size
+                                } in size`,
                             );
                         }
 

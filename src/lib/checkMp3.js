@@ -70,11 +70,14 @@ export default async (filePath) => {
             return await convertToMP3(filePath, newFilePath, bitrate);
         }
     } else {
-        renameSync(filePath, "og-" + filePath);
+        // convert to mp3 with bitrate 128k
+        const tempFilePath = filePath + ".og" + extname;
         try {
-            return await convertToMP3("og-" + filePath, filePath, "128k");
+            renameSync(filePath, tempFilePath);
+            const newFilePath = filePath.slice(0, -extname.length) + ".mp3";
+            return await convertToMP3(tempFilePath, newFilePath, "128k");
         } catch (error) {
-            renameSync("og-" + filePath, filePath);
+            renameSync(tempFilePath, filePath);
             throw error;
         }
     }
