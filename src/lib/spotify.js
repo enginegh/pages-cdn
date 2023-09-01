@@ -8,7 +8,7 @@ export default class Spotify {
         this.client_id = client_id;
         this.client_secret = client_secret;
         this.session = axios.create({
-            baseURL: "https://api.spotify.com/v1/",
+            baseURL: "https://api.spotify.com/v1",
         });
     }
 
@@ -85,14 +85,14 @@ export default class Spotify {
             .catch((error) => {
                 console.error(error.response.data);
                 if (error.response) {
-                    throw error.response.data.error.message;
+                    throw new Error(error.response.data.error.message)
                 }
-                throw error.message;
+                throw new Error(error.message);
             });
     }
 
     async search(query) {
-        return this.fetch("search", {
+        return this.fetch("/search", {
             params: { q: query, type: "track" },
         }).then((response) => {
             return response.tracks.items;
@@ -100,13 +100,13 @@ export default class Spotify {
     }
 
     async track(id) {
-        return this.fetch(`tracks/${id}`).then((response) => {
+        return this.fetch(`/tracks/${id}`).then((response) => {
             return response;
         });
     }
 
     async tracks(ids) {
-        return this.fetch(`tracks`, { params: { ids: ids.join(",") } }).then(
+        return this.fetch(`/tracks`, { params: { ids: ids.join(",") } }).then(
             (response) => {
                 return response.tracks;
             },
@@ -114,19 +114,19 @@ export default class Spotify {
     }
 
     async playlist(id) {
-        return this.fetch(`playlists/${id}`).then((response) => {
+        return this.fetch(`/playlists/${id}`).then((response) => {
             return response;
         });
     }
 
     async album(id) {
-        return this.fetch(`albums/${id}`).then((response) => {
+        return this.fetch(`/albums/${id}`).then((response) => {
             return response;
         });
     }
 
     async artist(id) {
-        return this.fetch(`artists/${id}`).then((response) => {
+        return this.fetch(`/artists/${id}`).then((response) => {
             return response;
         });
     }
@@ -138,7 +138,7 @@ export default class Spotify {
         market = "IN",
         limit = 20,
     }) {
-        return this.fetch("recommendations", {
+        return this.fetch("/recommendations", {
             params: {
                 seed_tracks: seed_tracks?.join(","),
                 seed_artists: seed_artists?.join(","),

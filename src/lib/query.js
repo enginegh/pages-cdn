@@ -8,10 +8,10 @@ export function getQueryFromMetadata(track) {
 
     let query = parsedTitle;
 
-    if (track.type === "track") {
+    if (track.artists.length > 0) {
         const artists = track.artists.map((artist) => artist.name).join(" ");
         query = artists ? `${query} ${artists}` : query;
-    } else if (track.type === "album") {
+    } else if (track.album) {
         const album = track.album.name;
         query = album ? `${query} ${album}` : query;
     }

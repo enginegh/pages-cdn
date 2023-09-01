@@ -2,7 +2,7 @@
 import logger from "./lib/logger.js";
 import Spotify from "./lib/spotify.js";
 import DeezerDownloader from "./providers/deezer.js";
-import YoutubeDownloader from "./providers/youtube.js";
+import { Youtube, YoutubeMusic } from "./providers/youtube.js";
 import ID3Writer from "./lib/id3writer.js";
 import path from "path";
 import { existsSync, mkdirSync, rmSync } from "fs";
@@ -15,8 +15,8 @@ export default class TrackDownloader {
         this.download_dir = download_dir;
     }
 
-    async download(uri) {
-        const track = await this.spotify.uri(uri);
+    async download(trackId) {
+        const track = await this.spotify.track(trackId);
         const fileName = path.resolve(
             path.join(
                 this.download_dir,
@@ -42,7 +42,7 @@ export default class TrackDownloader {
 
         if (!filePath) {
             throw new Error(
-                `[downloader] Track not found for ${track.name} - ${track.artists[0].name} - ${uri}`,
+                `[downloader] Track not found for ${track.name} - ${track.artists[0].name} - ${trackId}`,
             );
         }
 
@@ -52,7 +52,7 @@ export default class TrackDownloader {
         logger.debug("Writing tags...");
         await ID3Writer.spotifyWrite(track, filePath);
         logger.info(
-            `Downloaded ${track.name} - ${track.artists[0].name} - ${uri}`,
+            `Downloaded ${track.name} - ${track.artists[0].name} - ${trackId}`,
         );
         return { track, filePath };
     }
@@ -70,7 +70,6 @@ export default class TrackDownloader {
             config.deezer.cookies,
             config.deezer.proxy,
         );
-        const youtube = YoutubeDownloader;
 
         let downloadDir = path.resolve(
             config.downloader.download_dir || "./tracks",
@@ -80,7 +79,7 @@ export default class TrackDownloader {
         }
         mkdirSync(downloadDir);
 
-        const providers = [deezer, youtube];
+        const providers = [deezer, YoutubeMusic, Youtube];
         return new TrackDownloader(spotify, providers, downloadDir);
     };
 }

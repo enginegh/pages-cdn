@@ -1,10 +1,11 @@
 import { parse } from "smol-toml";
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, unlinkSync, writeFileSync } from "fs";
 import logger from "./lib/logger.js";
 import PQueue from "p-queue";
 import { MongoClient } from "mongodb";
 import TrackDownloader from "./downloader.js";
 import Cfetch from "./cpages/index.js";
+import MongoQueue from "./queue.js";
 
 async function main() {
     logger.info("Starting");
@@ -13,25 +14,7 @@ async function main() {
     );
 
     const downloader = await TrackDownloader.init(config);
-    const mongo = new MongoClient(config.mongodb.uri);
-    try {
-        await mongo.connect();
-        logger.debug("Connected to mongo");
-    } catch (error) {
-        logger.error(error);
-        process.exit(1);
-    }
-
-    const queuecol = mongo
-        .db(config.mongodb.queue_db)
-        .collection(config.mongodb.queue_collection);
-    await queuecol.createIndex({ uri: 1 }, { unique: true });
-
-    const storagecol = mongo
-        .db(config.mongodb.storage_db)
-        .collection(config.mongodb.storage_collection);
-    await storagecol.createIndex({ isrc: 1 }, { unique: true });
-    await storagecol.createIndex({ spotify: 1 }, { unique: true });
+    const mongoqueue = await MongoQueue.fromMongoURI(config.mongodb.uri, config.mongodb.queue_db, config.mongodb.storage_db);
 
     const queue = new PQueue({
         concurrency: config.downloader.concurrency || 1,
@@ -41,50 +24,14 @@ async function main() {
     const manifest = [];
     const succeeded = [];
 
-    const total_queue = await queuecol.countDocuments({
-        $or: [
-            { status: "pending" },
-            {
-                status: "locked",
-                locked_until: { $lte: new Date() },
-            },
-        ],
-    });
-    let limit = config.downloader.limit || 100;
-    logger.info(`Total queue: ${total_queue}, queue limit: ${limit}`);
-    while (limit) {
-        // find and lock a pending track, set locked_by to "me" and locked_until to now + 1 hour
-        const doc = await queuecol.findOneAndUpdate(
-            // find a pending track that is not locked and locked_until is in the past or not set
-            // the status should be pending, but if it's locked, then the locked_until should be in the past
-            {
-                $or: [
-                    { status: "pending" },
-                    {
-                        status: "locked",
-                        locked_until: { $lte: new Date() },
-                    },
-                ],
-            },
-            {
-                $set: {
-                    status: "locked",
-                    locked_until: new Date(Date.now() + 3600000),
-                },
-            },
-            { sort: { _id: 1 }, returnDocument: "after" },
-        );
+    const stats = await mongoqueue.stats();
 
+    let limit = config.downloader.limit || 1;
+    logger.info(`Total: ${stats.total}, Pending: ${stats.pending}, Locked: ${stats.locked}, Limit: ${limit}`);
+    while (limit) {
+        const doc = await mongoqueue.next();
         if (!doc) {
             break;
-        }
-
-        if (await storagecol.findOne({ spotify: doc.uri })) {
-            logger.debug(
-                `Skipping ${doc._id} because it already exists in storage`,
-            );
-            await queuecol.deleteOne({ _id: doc._id });
-            continue;
         }
 
         logger.debug(`Adding to queue: ${doc._id}`);
@@ -93,14 +40,14 @@ async function main() {
                 let success = false;
                 try {
                     const { track, filePath } = await downloader.download(
-                        doc.uri,
+                        doc.spotify,
                     );
                     // store track.uri, track.external_ids.isrc, and filePath without downloader.download_dir
                     // skip if locked_until is in the past
 
                     if (doc.locked_until > new Date()) {
                         const manifestEntry = {
-                            spotify: track.uri,
+                            spotify: track.id,
                             isrc: track.external_ids.isrc,
                             path: encodeURI(
                                 filePath.slice(downloader.download_dir.length),
@@ -109,18 +56,19 @@ async function main() {
                         manifest.push(manifestEntry);
                         succeeded.push(doc._id);
                         success = true;
+                    } else {
+                        unlinkSync(filePath);
                     }
                 } catch (error) {
-                    logger.error(error.message);
+                    if (error.message === "invalid id") {
+                        logger.error(`Skipping '${doc.spotify}' because it has an invalid id`);
+                        await mongoqueue.delete(doc._id);
+                    } else {
+                        logger.error(error.message);
+                    }
                 } finally {
                     if (!success) {
-                        await queuecol.updateOne(
-                            { _id: doc._id },
-                            {
-                                $set: { status: "pending" },
-                                $unset: { locked_until: "" },
-                            },
-                        );
+                        await mongoqueue.unlock(doc._id);
                     }
                 }
             },
@@ -134,7 +82,6 @@ async function main() {
 
     if (queue.size === 0) {
         logger.info("No tracks to download, exiting");
-        await mongo.close();
         process.exit(0);
     }
 
@@ -149,7 +96,6 @@ async function main() {
 
     if (succeeded.length === 0) {
         logger.info("No tracks downloaded, exiting");
-        await mongo.close();
         process.exit(0);
     }
 
@@ -169,7 +115,7 @@ async function main() {
     logger.info("Uploading files to cpages");
     const result = await cfetch.push(downloader.download_dir);
     const baseUrl = result.url;
-    logger.debug(`Base url: ${baseUrl}`);
+    logger.debug(`Manifest url: ${baseUrl}/manifest.json`);
     logger.info("Uploading complete");
 
     for (const entry of manifest) {
@@ -177,16 +123,14 @@ async function main() {
         delete entry.path;
     }
 
-    logger.info("Storing manifest in mongo");
-    await storagecol.insertMany(manifest);
+    logger.info("Storing manifest in mongo & removing queue entries");
+    await mongoqueue.markSucceeded(succeeded, manifest);
     logger.debug("Storing complete");
 
-    logger.info("Deleting succeeded entries from queue");
-    await queuecol.deleteMany({ _id: { $in: succeeded } });
+    logger.debug("Removing download directory");
     downloader.deleteDownloadDir();
-    logger.debug("Deletion complete");
 
-    await mongo.close();
+    await mongoqueue.close();
 
     logger.info("Finished");
 }

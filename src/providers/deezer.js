@@ -160,7 +160,7 @@ export default class DeezerDownloader {
         );
         const tracks = response.data.data;
         if (!tracks.length) {
-            throw new Error(`[deezer] No results found for ${query}`);
+            throw new Error(`[Deezer] No results found for ${query}`);
         }
         const filteredTracks = tracks.filter((track) => {
             return (
@@ -169,7 +169,7 @@ export default class DeezerDownloader {
             );
         });
         if (!filteredTracks.length) {
-            logger.debug(`[deezer] No matching results found for ${query}`);
+            logger.debug(`[Deezer] No matching results found for ${query}`);
             return null;
         }
         return filteredTracks[0].id;

@@ -1,15 +1,16 @@
 // a youtube class to download tracks from youtube music
 
 import { searchMusics } from "node-youtube-music";
+import { GetListByKeyword } from "youtube-search-api";
 import ytdl from "ytdl-core";
 import { createWriteStream } from "fs";
 import { getQueryFromMetadata } from "../lib/query.js";
 import logger from "../lib/logger.js";
 
-export default class YoutubeDownloader {
+class YoutubeDownloader {
     static async downloadTrack(id, fileName) {
         const musicInfo = await ytdl.getInfo(
-            `https://music.youtube.com/watch?v=${id}`,
+            `https://youtube.com/watch?v=${id}`,
         );
         const format = ytdl.chooseFormat(musicInfo.formats, {
             quality: "highestaudio",
@@ -28,7 +29,22 @@ export default class YoutubeDownloader {
                 });
         });
     }
+}
 
+
+export class Youtube extends YoutubeDownloader {
+    static async search(track) {
+        const query = getQueryFromMetadata(track);
+        const results = await GetListByKeyword(query, false, 1);
+        if (!results.items.length) {
+            logger.debug(`[youtube] No results found for ${query}`);
+            return null;
+        }
+        return results.items[0].id;
+    }
+}
+
+export class YoutubeMusic extends YoutubeDownloader {
     static async search(track) {
         const query = getQueryFromMetadata(track);
         const musics = await searchMusics(query);

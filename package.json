@@ -10,6 +10,7 @@
         "p-queue": "^7.3.4",
         "smol-toml": "^1.1.2",
         "winston": "^3.10.0",
+        "youtube-search-api": "^1.2.1",
         "ytdl-core": "^4.11.5"
     },
     "type": "module",
