@@ -29,7 +29,7 @@ const convertToMP3 = async (
             outputFilePath,
         ];
 
-        const ffmpegProcess = spawn("ffmpeg", ffmpegArgs, { timeout: 600 });
+        const ffmpegProcess = spawn("ffmpeg", ffmpegArgs, { timeout: 600 * 1000 });
         logger.debug(
             `Converting to MP3 with arguments: ${ffmpegArgs.join(" ")}`,
         );
