@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test</title>
+    <style>
+        #log-panel {
+            box-sizing: border-box;
+            width: 50%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            background-color: #333;
+            color: #fff;
+            height: 100%;
+            overflow-y: auto;
+            font-family: 'Segoe UI Light';
+            margin: 0;
+            padding: 1em 2em;
+            -webkit-padding-start: 2em;
+        }
+
+        .content {
+            box-sizing: border-box;
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 50%;
+            padding: 2em;
+        }
+
+        button {
+            width: 50px;
+            height: 50px;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+</head>
+
+<body>
+    <div class="content">
+        <button id="btn1">no delay</button>
+        <button id="btn2">delay 5s</button>
+    </div>
+
+    <ol id="log-panel"></ol>
+    <script>
+        var logPanel = document.getElementById('log-panel');
+        var startTime = new Date().getTime();
+        var oldLog = console.log;
+        console.log = function () {
+            var msg = '';
+            for (var i = 0, j = arguments.length; i < j; i++) {
+                msg += arguments[i] + '\t';
+            }
+            var logItem = document.createElement('li');
+            var text = document.createTextNode(msg);
+            logItem.appendChild(text);
+            logPanel.appendChild(logItem);
+            oldLog.apply(console, arguments);
+        };
+
+        function emptyNode(node) {
+            while (node.firstChild) {
+                node.removeChild(node.firstChild);
+            }
+        }
+
+        function clearConsole() {
+            console.clear && console.clear();
+            emptyNode(logPanel);
+            startTime = new Date().getTime();
+        }
+        clearConsole();
+        /*********** /Log ************/
+        var events = 'canplay,ended,loadeddata,loadedmetadata,loadstart,pause,play,playing'.split(',');
+
+        // event handler
+        var onEvent = function (e) {
+            var endTime = new Date().getTime();
+            console.log(e.type, (endTime - startTime) / 1000 + 's');
+        };
+    </script>
+    <script>
+        var content = document.getElementsByClassName('content')[0];
+
+        var addListener = window.addEventListener ?
+            function (el, type, fn) { el.addEventListener(type, fn, false); } :
+            function (el, type, fn) { el.attachEvent('on' + type, fn); };
+
+        preloadAudios({
+            0: {
+                url: "https://66e7a992.cdn-cef.pages.dev/On%20&%20On%20-%20Shamoon%20Ismail.mp3"
+            }
+        });
+
+        function fetchAudio(audioUrl) {
+            console.log(audioUrl);
+            var deferred = $.Deferred();
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", audioUrl, true);
+            if (self.isAudioContextSupported) {
+                xhr.responseType = "arraybuffer";
+            } else {
+                xhr.responseType = "blob";
+            }
+            xhr.onload = function (e) {
+                if (xhr.status === 200) {
+                    //console.log('load audio resolve');
+                    if (self.isAudioContextSupported) {
+                        // Download the audio as Array Buffer
+                        deferred.resolve(xhr.response);
+                    } else {
+                        if (true) {
+                            // Download the audio as blob and return the audioUrl as object Id.
+                            // E.g.: blob:http://localhost:52560/8bda0f...
+                            var audioId = (window.webkitURL
+                                ? window.webkitURL
+                                : window.URL
+                            ).createObjectURL(xhr.response);
+                            deferred.resolve(audioId);
+                        } else {
+                            // Download the audio as base64
+                            // E.g.: data:audio/mp3;base64,SUQzBAAAAA....
+                            var blob = new Blob([xhr.response], { type: "audio/mp3" });
+                            var reader = new FileReader();
+                            reader.onload = function (event) {
+                                deferred.resolve(event.target.result);
+                            };
+                            reader.readAsDataURL(blob);
+                        }
+                    }
+                } else {
+                    console.log("load audio reject: " + e);
+                    deferred.reject(Error(xhr.statusText));
+                }
+            };
+            xhr.onerror = function (e) {
+                console.log("load audio error: ", e);
+                deferred.reject(Error("Error fetching audio data."));
+            };
+
+            xhr.send();
+            return deferred;
+        }
+
+        function preloadAudios(audioMapping) {
+            var preloadAudiosDeferred = [];
+            var loadedAudiosDeferred = [];
+            var keys = [0];
+
+            for (var i = 0; i < keys.length; i++) {
+                preloadAudiosDeferred.push(fetchAudio(audioMapping[keys[i]].url));
+            }
+
+            return $.when.apply($, preloadAudiosDeferred).then(function () {
+                var loadResult = arguments;
+                for (var j = 0; j < keys.length; j++) {
+                    var key = keys[j];
+                    var element =
+                        '<audio controls id=textDictAudio' +
+                        j +
+                        "><source src=" +
+                        loadResult[j] +
+                        ' type="audio/mpeg"></audio>';
+                    $(".content").append(element);
+
+                    var e = new MouseEvent('click');
+                    e.id = "textDictAudio" + j;
+                    var btn2 = document.getElementById('btn2');
+                    btn2.dispatchEvent(e);
+
+                    loadedAudiosDeferred.push(loadAudios("textDictAudio" + j));
+                }
+                return $.when.apply($, loadedAudiosDeferred);
+            });
+        }
+
+        function loadAudios(audioElementId) {
+            var deferred = $.Deferred();
+            var audioElementTag = $("#" + audioElementId)[0];
+            var states = [
+                "progress",
+                "canplay",
+                "loadeddata",
+                "loadedmetadata",
+                "play",
+                "loadstart"
+            ];
+            states.forEach(function (state) {
+                audioElementTag.addEventListener(state, function () {
+                    console.log(audioElementId + "'s state is " + state);
+                    deferred.resolve();
+                });
+            });
+            return deferred;
+        }
+
+        $("#btn1").click(function () {
+            $("#textDictAudio0").trigger("play");
+        });
+
+        $(".content").bind('click', function () {
+            console.log("no pause and load");
+            //$("#textDictAudio0").trigger("load");
+        });
+
+        btn2.addEventListener("click", function (e) {
+            console.log(e.id);
+            $("#" + e.id).trigger("pause");
+            $("#" + e.id).trigger("load");
+
+        });
+    </script>
+</body>
+
+</html>

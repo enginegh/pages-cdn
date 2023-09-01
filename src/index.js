@@ -27,7 +27,7 @@ async function main() {
     const stats = await mongoqueue.stats();
 
     let limit = config.downloader.limit || 1;
-    logger.info(`Total: ${stats.total}, Pending: ${stats.pending}, Locked: ${stats.locked}, Limit: ${limit}`);
+    logger.info(`Total: ${stats.total}, Pending: ${stats.pending}, Locked: ${stats.locked}, Limit: ${limit}, Concurrency: ${queue.concurrency}`);
     while (limit) {
         const doc = await mongoqueue.next();
         if (!doc) {

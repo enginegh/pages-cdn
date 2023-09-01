@@ -22,7 +22,7 @@ export default class MongoQueue {
     }
 
     next = async () => {
-        const doc = this.queuedb.findOneAndUpdate(
+        const doc = await this.queuedb.findOneAndUpdate(
             this.pendingFilter,
             {
                 $set: {
@@ -80,7 +80,14 @@ export default class MongoQueue {
     }
 
     markSucceeded = async (ids, manifestEntries) => {
-        await this.storagedb.insertMany(manifestEntries, { ordered: false });
+        try {
+            const insertions = await this.storagedb.insertMany(manifestEntries, { ordered: false });
+            logger.debug(`Inserted ${insertions.insertedCount} entries into storage`);
+        } catch (error) {
+            if (error.code !== 11000) {
+                throw error;
+            }
+        }
         await this.queuedb.deleteMany({ _id: { $in: ids } });
 
     }
