@@ -39,7 +39,6 @@ jobs:
               with:
                   name: cache
                   workflow_conclusion: ""
-                  check_artifacts: true
                   if_no_artifact_found: warn
 
             - name: Run test script
