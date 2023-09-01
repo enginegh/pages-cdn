@@ -16,6 +16,8 @@ const convertToMP3 = async (
         // output file size should be less than 25 * 1024 * 1024 bytes
 
         const ffmpegArgs = [
+            "-nostdin",
+            "-y",
             "-i",
             inputFilePath,
             "-codec:a",
@@ -23,9 +25,6 @@ const convertToMP3 = async (
             "-vn",
             "-b:a",
             bitrate,
-            "-preset",
-            "fast",
-            "-y",
             outputFilePath,
         ];
 
