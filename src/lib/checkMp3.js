@@ -29,7 +29,7 @@ const convertToMP3 = async (
             outputFilePath,
         ];
 
-        const ffmpegProcess = spawn("ffmpeg", ffmpegArgs);
+        const ffmpegProcess = spawn("ffmpeg", ffmpegArgs, { timeout: 600 });
         logger.debug(
             `Converting to MP3 with arguments: ${ffmpegArgs.join(" ")}`,
         );
@@ -65,8 +65,8 @@ export default async (filePath) => {
                 stats.size < 10 * 1024 * 1024
                     ? "320k"
                     : stats.size < 13 * 1024 * 1024
-                    ? "256k"
-                    : "128k";
+                        ? "256k"
+                        : "128k";
             return await convertToMP3(filePath, newFilePath, bitrate);
         }
     } else {
