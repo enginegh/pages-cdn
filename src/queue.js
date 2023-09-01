@@ -9,11 +9,8 @@ export default class MongoQueue {
 
         this.pendingFilter = {
             $or: [
-                { status: "pending" },
-                {
-                    status: "locked",
-                    locked_until: { $lt: new Date() },
-                },
+                { locked_until: { $lt: new Date() } },
+                { locked_until: { $exists: false } },
             ],
         };
     }
@@ -29,7 +26,6 @@ export default class MongoQueue {
             this.pendingFilter,
             {
                 $set: {
-                    status: "locked",
                     locked_until: new Date(Date.now() + 3600000),
                 },
             },
@@ -49,14 +45,28 @@ export default class MongoQueue {
 
     stats = async () => {
         const stats = await this.queuedb.aggregate([
-            { $group: { _id: "$status", count: { $sum: 1 } } },
-            { $sort: { _id: 1 } },
+            {
+                $group: {
+                    _id: "$locked_until",
+                    count: { $sum: 1 },
+                },
+            },
         ]).toArray();
 
         return {
-            total: stats.reduce((acc, cur) => acc + cur.count, 0),
-            pending: stats.find((stat) => stat._id === "pending")?.count || 0,
-            locked: stats.find((stat) => stat._id === "locked")?.count || 0,
+            total: await this.queuedb.countDocuments(),
+            pending: stats.reduce((acc, cur) => {
+                if (cur._id === null) {
+                    return acc + cur.count;
+                }
+                return acc;
+            }, 0),
+            locked: stats.reduce((acc, cur) => {
+                if (cur._id !== null) {
+                    return acc + cur.count;
+                }
+                return acc;
+            }, 0),
         };
     }
 
@@ -64,7 +74,6 @@ export default class MongoQueue {
         await this.queuedb.updateOne(
             { _id: id },
             {
-                $set: { status: "pending" },
                 $unset: { locked_until: "" },
             },
         );
