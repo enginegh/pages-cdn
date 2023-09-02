@@ -43,7 +43,7 @@ function resizeAndConvertToMP3(
             }
 
             const audioBitrate = calculateAudioBitrate(
-                MAX_ASSET_SIZE - 1572864,
+                MAX_ASSET_SIZE - 2097152,
                 metadata.format.duration,
             );
 
