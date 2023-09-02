@@ -7,11 +7,12 @@ import Cfetch from "./cpages/index.js";
 import MongoQueue from "./queue.js";
 import axios from "axios";
 
+export const config = parse(
+    process.env.CONFIG || readFileSync("./config.toml", "utf-8"),
+);
+
 async function main() {
     logger.info("Starting");
-    const config = parse(
-        process.env.CONFIG || readFileSync("./config.toml", "utf-8"),
-    );
 
     const downloader = await TrackDownloader.init(config);
     const mongoqueue = await MongoQueue.fromMongoURI(config.mongodb.uri, config.mongodb.queue_db, config.mongodb.storage_db);
@@ -19,6 +20,8 @@ async function main() {
     const queue = new PQueue({
         concurrency: config.concurrency || 1,
         autoStart: false,
+        timeout: (config.timeout || 15) * 60 * 1000, // 15 minutes (in ms)
+        throwOnTimeout: false,
     });
 
     const manifest = [];
@@ -71,11 +74,7 @@ async function main() {
                         await mongoqueue.unlock(doc._id);
                     }
                 }
-            },
-            {
-                timeout: 3600000,
-                throwOnTimeout: false,
-            },
+            }
         );
         limit--;
     }

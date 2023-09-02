@@ -7,6 +7,9 @@ import path from "path";
 import Ffmpeg from "fluent-ffmpeg";
 import { MAX_ASSET_SIZE } from "../cpages/constants.js";
 import logger from "./logger.js";
+import { config } from "../index.js";
+
+const FFMPEG_TIMEOUT = config.ffmpeg_timeout || 8;
 
 const calculateAudioBitrate = (requiredSize, duration, max = "320k") => {
     // return in format 128k, 256k, 320k
@@ -25,7 +28,7 @@ const deleteFile = (filePath) => {
     }
 };
 
-function resizeAndConvertToMP3(inputFilePath, outputFilePath, timeoutInMinutes = 5) {
+function resizeAndConvertToMP3(inputFilePath, outputFilePath, timeoutInMinutes = FFMPEG_TIMEOUT) {
     return new Promise((resolve, reject) => {
         const inputAudio = Ffmpeg(inputFilePath);
 
@@ -60,7 +63,7 @@ function resizeAndConvertToMP3(inputFilePath, outputFilePath, timeoutInMinutes =
                 .run();
 
             setTimeout(() => {
-                reject(new Error('Ffpmeg Conversion timed out'));
+                reject(new Error(`Ffpmeg Conversion timed out for ${inputFilePath}`));
             }, timeoutInMinutes * 60 * 1000);
         });
     });
@@ -82,7 +85,7 @@ export default async (filePath) => {
     try {
         return await resizeAndConvertToMP3(tempFilePath, desiredfilePath);
     } catch (error) {
-        renameSync(tempFilePath, filePath);
+        deleteFile(tempFilePath);
         deleteFile(desiredfilePath);
         throw error;
     }
