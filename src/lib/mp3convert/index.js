@@ -4,11 +4,20 @@ import Ffmpeg from "fluent-ffmpeg";
 import { MAX_ASSET_SIZE } from "../../cpages/constants.js";
 import logger from "../logger.js";
 import config from "../config.js";
-import { calculateAudioBitrateByFile, deleteFile, createTempFilePath } from "./utils.js";
+import {
+    calculateAudioBitrateByFile,
+    deleteFile,
+    createTempFilePath,
+} from "./utils.js";
 
 const FFMPEG_TIMEOUT = config.ffmpeg_timeout || 8;
 
-const convertToMP3 = (inputFilePath, outputFilePath, bitrate, timeoutInMinutes = FFMPEG_TIMEOUT) => {
+const convertToMP3 = (
+    inputFilePath,
+    outputFilePath,
+    bitrate,
+    timeoutInMinutes = FFMPEG_TIMEOUT,
+) => {
     return new Promise((resolve, reject) => {
         const inputAudio = Ffmpeg(inputFilePath);
 
@@ -46,17 +55,20 @@ const convertToMP3 = (inputFilePath, outputFilePath, bitrate, timeoutInMinutes =
     });
 };
 
-
-function resizeAndConvertToMP3(
-    inputFilePath,
-    outputFilePath,
-    bitrate,
-) {
+function resizeAndConvertToMP3(inputFilePath, outputFilePath, bitrate) {
     // calculate bitrate and convert to mp3 if the size is still too large then convert again with bitrate -10k
     return new Promise(async (resolve, reject) => {
         if (!bitrate) {
-            bitrate = await calculateAudioBitrateByFile(MAX_ASSET_SIZE - 1572864, inputFilePath);
+            bitrate = await calculateAudioBitrateByFile(
+                MAX_ASSET_SIZE - 1572864,
+                inputFilePath,
+            );
         }
+
+        if (bitrate < 32) {
+            throw new Error(`Bitrate too low: ${inputFilePath}`);
+        }
+
         convertToMP3(inputFilePath, outputFilePath, bitrate)
             .then((filePath) => {
                 const stats = statSync(filePath);
@@ -67,8 +79,15 @@ function resizeAndConvertToMP3(
                     // if size is still too large, try again with bitrate -10k
                     const newBitrate = bitrate - 10;
                     logger.debug(
-                        `File size is still too large, trying again with bitrate ${bitrate} -> ${newBitrate}: ${filePath}`);
-                    resolve(resizeAndConvertToMP3(inputFilePath, outputFilePath, newBitrate));
+                        `File size is still too large, trying again with bitrate ${bitrate} -> ${newBitrate}: ${filePath}`,
+                    );
+                    resolve(
+                        resizeAndConvertToMP3(
+                            inputFilePath,
+                            outputFilePath,
+                            newBitrate,
+                        ),
+                    );
                 }
             })
             .catch((error) => {

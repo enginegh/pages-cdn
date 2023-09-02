@@ -15,7 +15,10 @@ export const calculateAudioBitrateByFile = (requiredSize, filePath) => {
             if (err) {
                 reject(err);
             }
-            const bitrate = calculateAudioBitrate(requiredSize, data.format.duration);
+            const bitrate = calculateAudioBitrate(
+                requiredSize,
+                data.format.duration,
+            );
             resolve(bitrate);
         });
     });
