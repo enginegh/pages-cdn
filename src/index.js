@@ -6,10 +6,7 @@ import TrackDownloader from "./downloader.js";
 import Cfetch from "./cpages/index.js";
 import MongoQueue from "./queue.js";
 import axios from "axios";
-
-export const config = parse(
-    process.env.CONFIG || readFileSync("./config.toml", "utf-8"),
-);
+import config from "./lib/config.js";
 
 async function main() {
     logger.info("Starting");

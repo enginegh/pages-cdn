@@ -7,7 +7,7 @@ import path from "path";
 import Ffmpeg from "fluent-ffmpeg";
 import { MAX_ASSET_SIZE } from "../cpages/constants.js";
 import logger from "./logger.js";
-import { config } from "../index.js";
+import config from "./config.js";
 
 const FFMPEG_TIMEOUT = config.ffmpeg_timeout || 8;
 
