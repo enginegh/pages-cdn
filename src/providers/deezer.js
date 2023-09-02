@@ -113,7 +113,7 @@ export default class DeezerDownloader {
             responseType: "stream",
         });
 
-        console.log(
+        logger.debug(
             `Downloading ${track.SNG_TITLE} - ${track.ART_NAME} (${trackQuality})`,
         );
 
@@ -121,7 +121,7 @@ export default class DeezerDownloader {
             const stream = fs.createWriteStream(output_file);
             this.decryptStream(response, key, stream);
             response.data.on("end", () => {
-                console.log(
+                logger.debug(
                     `Downloaded ${track.SNG_TITLE} - ${track.ART_NAME} (${trackQuality})`,
                 );
                 resolve(output_file);

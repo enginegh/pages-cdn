@@ -6,14 +6,16 @@ import mime from "mime";
 import { randomUUID } from "crypto";
 import PQueue from "p-queue";
 import logger from "../lib/logger.js";
+import {
+    MAX_ASSET_COUNT,
+    MAX_ASSET_SIZE,
+    MAX_BUCKET_FILE_COUNT,
+    MAX_BUCKET_SIZE,
+    MAX_DEPLOYMENT_ATTEMPTS,
+    MAX_UPLOAD_ATTEMPTS,
+    BULK_UPLOAD_CONCURRENCY,
+} from "./constants.js";
 
-const MAX_BUCKET_SIZE = 50 * 1024 * 1024;
-const MAX_BUCKET_FILE_COUNT = 5000;
-const BULK_UPLOAD_CONCURRENCY = 3;
-const MAX_UPLOAD_ATTEMPTS = 5;
-const MAX_ASSET_SIZE = 25 * 1024 * 1024;
-const MAX_ASSET_COUNT = 20_000;
-const MAX_DEPLOYMENT_ATTEMPTS = 5;
 
 export default class Cfetch {
     constructor(account_id, project_name, token) {

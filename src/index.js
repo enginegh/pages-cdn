@@ -82,12 +82,11 @@ async function main() {
 
     if (queue.size === 0) {
         logger.info("No tracks to download, exiting");
-        process.exit(0);
+        await mongoqueue.close(true);
     }
 
     // print queue length
-    logger.debug(`Queue length: ${queue.size}`);
-    logger.info("Waiting for queue to finish");
+    logger.info(`Waiting for downloads to finish: ${queue.size}`);
     queue.start();
     await queue.onIdle();
     logger.debug("Queue finished");
@@ -96,7 +95,7 @@ async function main() {
 
     if (succeeded.length === 0) {
         logger.info("No tracks downloaded, exiting");
-        process.exit(0);
+        await mongoqueue.close(true);
     }
 
     logger.debug("Initializing cpages");
@@ -136,8 +135,8 @@ async function main() {
         await axios.get(webhook);
     }
 
-    await mongoqueue.close();
     logger.info("Finished");
+    await mongoqueue.close(true);
 }
 
 main();

@@ -17,8 +17,9 @@ export default class MongoQueue {
 
     ensureIndexes = async () => {
         await this.queuedb.createIndex({ spotify: 1 }, { unique: true });
-        await this.storagedb.createIndex({ isrc: 1 }, { unique: true });
+
         await this.storagedb.createIndex({ spotify: 1 }, { unique: true });
+        await this.storagedb.createIndex({ isrc: 1 });
     }
 
     next = async () => {
@@ -44,30 +45,58 @@ export default class MongoQueue {
     }
 
     stats = async () => {
+        // if locked_until is in the past, it's pending
+        // if locked_until is in the future, it's locked
+        // if not locked_until, it's pending
+        // const pending = await this.queuedb.countDocuments(this.pendingFilter);
+        // const locked = await this.queuedb.countDocuments({
+        //     locked_until: { $gt: new Date() },
+        // });
+        // const total = await this.queuedb.countDocuments();
+
+        // using aggregation
+
         const stats = await this.queuedb.aggregate([
             {
-                $group: {
-                    _id: "$locked_until",
-                    count: { $sum: 1 },
+                $facet: {
+                    pending: [
+                        {
+                            $match: this.pendingFilter,
+                        },
+                        {
+                            $count: "count",
+                        },
+                    ],
+                    locked: [
+                        {
+                            $match: {
+                                locked_until: { $gt: new Date() },
+                            },
+                        },
+                        {
+                            $count: "count",
+                        },
+                    ],
+                    total: [
+                        {
+                            $count: "count",
+                        },
+                    ],
                 },
+            },
+            {
+                $project: {
+                    pending: { $arrayElemAt: ["$pending.count", 0] },
+                    locked: { $arrayElemAt: ["$locked.count", 0] },
+                    total: { $arrayElemAt: ["$total.count", 0] },
+                },
+
             },
         ]).toArray();
 
-        return {
-            total: await this.queuedb.countDocuments(),
-            pending: stats.reduce((acc, cur) => {
-                if (cur._id === null) {
-                    return acc + cur.count;
-                }
-                return acc;
-            }, 0),
-            locked: stats.reduce((acc, cur) => {
-                if (cur._id !== null) {
-                    return acc + cur.count;
-                }
-                return acc;
-            }, 0),
-        };
+        const { pending, locked, total } = stats[0];
+
+        return { pending, locked, total };
     }
 
     unlock = async (id) => {
@@ -87,17 +116,23 @@ export default class MongoQueue {
             if (error.code !== 11000) {
                 throw error;
             }
+            // log duplicate entries count and inserted entries count
+            logger.debug(`Inserted ${error.result.nInserted} entries into storage`);
+            logger.debug(`Skipped ${error.result.nInserted - error.result.nUpserted} duplicate entries`);
         }
         await this.queuedb.deleteMany({ _id: { $in: ids } });
-
     }
 
     delete = async (id) => {
         await this.queuedb.deleteOne({ _id: id });
     }
 
-    close = async () => {
+    close = async (exit=false) => {
         await this.mongo.close();
+        if (exit) {
+            logger.debug("Exiting");
+            process.exit(0);
+        }
     }
 
     static async fromMongoURI(uri, queuedb, storagedb) {

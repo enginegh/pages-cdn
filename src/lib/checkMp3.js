@@ -2,82 +2,76 @@
 // if size is not less than 25 * 1024 * 1024 bytes, bitrate is lowered to 128k
 // if mp3 file is not found, it is converted from the original file then the size is checked again
 
-import { spawn } from "child_process";
 import { statSync, renameSync, unlinkSync } from "fs";
 import path from "path";
+import Ffmpeg from "fluent-ffmpeg";
+import { MAX_ASSET_SIZE } from "../cpages/constants.js";
 import logger from "./logger.js";
 
-const convertToMP3 = async (
-    inputFilePath,
-    outputFilePath,
-    bitrate = "320k",
-) => {
-    return new Promise((resolve, reject) => {
-        // output file size should be less than 25 * 1024 * 1024 bytes
-
-        const ffmpegArgs = [
-            "-nostdin",
-            "-y",
-            "-i",
-            inputFilePath,
-            "-codec:a",
-            "libmp3lame",
-            "-vn",
-            "-b:a",
-            bitrate,
-            outputFilePath,
-        ];
-
-        const ffmpegProcess = spawn("ffmpeg", ffmpegArgs, { timeout: 600 * 1000 });
-        logger.debug(
-            `Converting to MP3 with arguments: ${ffmpegArgs.join(" ")}`,
-        );
-
-        ffmpegProcess.on("error", (error) => {
-            logger.warn(`Error converting to MP3: ${error}`);
-            reject(error);
-        });
-
-        ffmpegProcess.on("close", (code) => {
-            if (code === 0) {
-                unlinkSync(inputFilePath); // Remove original file
-                logger.debug("Conversion successful.");
-                resolve(outputFilePath);
-            } else {
-                logger.warn(`FFmpeg process exited with code ${code}`);
-                reject(`FFmpeg process exited with code ${code}`);
-            }
-        });
-    });
+const calculateAudioBitrate = (requiredSize, duration, max = "320k") => {
+    // return in format 128k, 256k, 320k
+    const bitrate = Math.floor(requiredSize * 8 / duration / 1000);
+    return bitrate > 320 ? max : bitrate + "k";
 };
 
+function resizeAndConvertToMP3(inputFilePath, outputFilePath, timeoutInMinutes = 5) {
+    return new Promise((resolve, reject) => {
+        const inputAudio = Ffmpeg(inputFilePath);
+
+        inputAudio.ffprobe((err, metadata) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+
+            const audioBitrate = calculateAudioBitrate(MAX_ASSET_SIZE - 1048576, metadata.format.duration);
+
+            inputAudio
+                .noVideo()
+                .audioCodec('libmp3lame')
+                .audioBitrate(audioBitrate)
+                .toFormat('mp3')
+                .output(outputFilePath)
+                .outputOptions([
+                    '-map_metadata -1',
+                ])
+                .on('end', () => {
+                    logger.debug(`Ffmpeg Conversion finished with bitrate ${audioBitrate}`);
+                    unlinkSync(inputFilePath);
+                    resolve(outputFilePath);
+                })
+                .on('error', (err) => {
+                    reject(err);
+                })
+                .on('start', function (commandLine) {
+                    logger.debug('Spawned Ffmpeg with command: ' + commandLine);
+                })
+                .run();
+
+            setTimeout(() => {
+                reject(new Error('Ffpmeg Conversion timed out'));
+            }, timeoutInMinutes * 60 * 1000);
+        });
+    });
+}
+
+
 export default async (filePath) => {
-    const extname = path.extname(filePath);
+    const extname = path.extname(filePath).toLowerCase();
     const stats = statSync(filePath);
-    if (stats.size < 25 * 1024 * 1024) {
-        if (extname === ".mp3") {
-            return filePath;
-        } else {
-            // replace extension with mp3
-            const newFilePath = filePath.slice(0, -extname.length) + ".mp3";
-            const bitrate =
-                stats.size < 10 * 1024 * 1024
-                    ? "320k"
-                    : stats.size < 13 * 1024 * 1024
-                        ? "256k"
-                        : "128k";
-            return await convertToMP3(filePath, newFilePath, bitrate);
-        }
-    } else {
-        // convert to mp3 with bitrate 128k
-        const tempFilePath = filePath + ".og" + extname;
-        try {
-            renameSync(filePath, tempFilePath);
-            const newFilePath = filePath.slice(0, -extname.length) + ".mp3";
-            return await convertToMP3(tempFilePath, newFilePath, "128k");
-        } catch (error) {
-            renameSync(tempFilePath, filePath);
-            throw error;
-        }
+
+    if (extname === ".mp3" && stats.size < MAX_ASSET_SIZE) {
+        return filePath;
+    }
+
+    const tempFilePath = filePath + ".og" + extname;
+    renameSync(filePath, tempFilePath);
+    // replace extension with .mp3
+    let desiredfilePath = filePath.slice(0, -extname.length) + ".mp3";
+    try {
+        return await resizeAndConvertToMP3(tempFilePath, desiredfilePath);
+    } catch (error) {
+        renameSync(tempFilePath, filePath);
+        throw error;
     }
 };
