@@ -60,7 +60,7 @@ function resizeAndConvertToMP3(inputFilePath, outputFilePath, bitrate) {
     return new Promise(async (resolve, reject) => {
         if (!bitrate) {
             bitrate = await calculateAudioBitrateByFile(
-                MAX_ASSET_SIZE - 1572864,
+                MAX_ASSET_SIZE - 2097152,
                 inputFilePath,
             );
         }
