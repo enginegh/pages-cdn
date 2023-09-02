@@ -43,17 +43,17 @@ function resizeAndConvertToMP3(
             }
 
             const audioBitrate = calculateAudioBitrate(
-                MAX_ASSET_SIZE - 2097152,
+                MAX_ASSET_SIZE - 3000000,
                 metadata.format.duration,
             );
 
             inputAudio
                 .noVideo()
+                .inputOptions(["-map_metadata -1"])
                 .audioCodec("libmp3lame")
                 .audioBitrate(audioBitrate)
                 .toFormat("mp3")
                 .output(outputFilePath)
-                .outputOptions(["-map_metadata -1"])
                 .on("end", () => {
                     logger.debug(
                         `Ffmpeg Conversion finished with bitrate ${audioBitrate}`,
