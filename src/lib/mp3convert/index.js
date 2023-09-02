@@ -66,7 +66,11 @@ function resizeAndConvertToMP3(inputFilePath, outputFilePath, bitrate) {
         }
 
         if (bitrate < 32) {
-            throw new Error(`Bitrate too low: ${inputFilePath}`);
+            reject(
+                new Error(
+                    `Bitrate is too low: ${bitrate} for file: ${inputFilePath}`,
+                ),
+            );
         }
 
         convertToMP3(inputFilePath, outputFilePath, bitrate)
