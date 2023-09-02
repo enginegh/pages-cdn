@@ -6,7 +6,7 @@ import { Youtube, YoutubeLite, YoutubeMusic } from "./providers/youtube.js";
 import ID3Writer from "./lib/id3writer.js";
 import path from "path";
 import { existsSync, mkdirSync, rmSync } from "fs";
-import checkMp3 from "./lib/checkMp3.js";
+import convertToMP3 from "./lib/mp3convert/index.js";
 
 export default class TrackDownloader {
     constructor(spotify, providers, download_dir) {
@@ -46,7 +46,7 @@ export default class TrackDownloader {
             );
         }
 
-        filePath = await checkMp3(filePath);
+        filePath = await convertToMP3(filePath);
 
         // write tags
         logger.debug("Writing tags...");

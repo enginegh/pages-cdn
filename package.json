@@ -12,7 +12,7 @@
         "smol-toml": "^1.1.2",
         "winston": "^3.10.0",
         "youtube-search-api": "^1.2.1",
-        "ytdl-core": "^4.11.5"
+        "ytdl-core": "fent/node-ytdl-core#pull/1080/head"
     },
     "type": "module",
     "devDependencies": {

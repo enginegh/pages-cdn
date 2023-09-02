@@ -1,4 +1,4 @@
 node_modules/
 tests/
 .cache.*
-config.toml
+*.toml

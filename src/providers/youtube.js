@@ -1,5 +1,3 @@
-// a youtube class to download tracks from youtube music
-
 import { searchMusics } from "node-youtube-music";
 import { GetListByKeyword } from "youtube-search-api";
 import ytdl from "ytdl-core";
