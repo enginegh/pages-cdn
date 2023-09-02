@@ -1,4 +1,4 @@
-import { searchMusics } from "node-youtube-music";
+import YoutubeMusicApi from "youtube-music-api";
 import { GetListByKeyword } from "youtube-search-api";
 import ytdl from "ytdl-core";
 import { createWriteStream } from "fs";
@@ -7,6 +7,7 @@ import {
     getQueryFromMetadata,
 } from "../lib/query.js";
 import logger from "../lib/logger.js";
+import { distance } from "fastest-levenshtein";
 
 class YoutubeDownloader {
     static async downloadTrack(id, fileName) {
@@ -35,32 +36,68 @@ class YoutubeDownloader {
 export class Youtube extends YoutubeDownloader {
     static async search(track) {
         const query = getQueryFromMetadata(track);
-        const results = await GetListByKeyword(query, false, 1);
-        if (!results.items.length) {
+        const results = await GetListByKeyword(query, false, 3);
+        const sortedResults = results.items.sort((a, b) => {
+            return (
+                distance(
+                    a.title.toLowerCase(),
+                    track.name.toLowerCase(),
+                ) -
+                distance(
+                    b.title.toLowerCase(),
+                    track.name.toLowerCase(),
+                )
+            );
+        });
+        if (!sortedResults.length) {
             logger.debug(`[youtube] No results found for ${query}`);
             return null;
         }
-        return results.items[0].id;
+        return sortedResults[0].id;
     }
 }
 
 export class YoutubeMusic extends YoutubeDownloader {
-    static async search(track) {
+    constructor() {
+        super();
+        this.api = new YoutubeMusicApi();
+    }
+
+    static async initialize() {
+        const ytmusic = new YoutubeMusic();
+        await ytmusic.api.initalize();
+        return ytmusic;
+    }
+
+    downloadTrack = YoutubeDownloader.downloadTrack;
+
+    async search(track) {
         const query = getQueryFromMetadata(track);
-        const musics = await searchMusics(query);
-        const filteredMusics = musics.filter((music) => {
+        const musics = await this.api.search(query, "song");
+        const filteredMusics = musics.content.filter((song) => {
             return (
-                music.album === track.album.name ||
+                distance(
+                    song.name.toLowerCase(),
+                    track.name.toLowerCase(),
+                ) > 0.8 ||
                 Math.abs(
-                    music.duration.totalSeconds - track.duration_ms / 1000,
-                ) < 3
+                    song.duration - track.duration_ms,
+                ) < 10000 ||
+                distance(
+                    song?.artist.name.toLowerCase(),
+                    track.artists[0].name.toLowerCase(),
+                ) > 0.8 ||
+                distance(
+                    song?.album.name.toLowerCase(),
+                    track.album.name.toLowerCase(),
+                ) > 0.8
             );
         });
         if (!filteredMusics.length) {
             logger.debug(`[yt-music] No matching results found for ${query}`);
             return null;
         }
-        return filteredMusics[0].youtubeId;
+        return filteredMusics[0].videoId;
     }
 }
 

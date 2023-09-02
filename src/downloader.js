@@ -17,6 +17,11 @@ export default class TrackDownloader {
 
     async download(trackId) {
         const track = await this.spotify.track(trackId);
+        
+        if (!track.name) {
+            throw new Error(`invalid id`);
+        }
+
         const fileName = path.resolve(
             path.join(
                 this.download_dir,
@@ -70,6 +75,7 @@ export default class TrackDownloader {
             config.deezer.cookies,
             config.deezer.proxy,
         );
+        const ytmusic = await YoutubeMusic.initialize();
 
         let downloadDir = path.resolve(config.download_dir || "./tracks");
         if (existsSync(downloadDir)) {
@@ -77,7 +83,7 @@ export default class TrackDownloader {
         }
         mkdirSync(downloadDir);
 
-        const providers = [YoutubeMusic, deezer, Youtube, YoutubeLite];
+        const providers = [ytmusic, deezer, Youtube, YoutubeLite];
         return new TrackDownloader(spotify, providers, downloadDir);
     };
 }
