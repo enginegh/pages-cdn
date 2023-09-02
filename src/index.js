@@ -135,7 +135,7 @@ async function main() {
         const webhook = config.webhook.replace(
             "{url}",
             baseUrl + "/manifest.json",
-        );
+        ).replace("{count}", manifest.length);
         await axios.get(webhook);
     }
 
