@@ -96,7 +96,11 @@ export default class MongoQueue {
 
         const { pending, locked, total } = stats[0];
 
-        return { pending, locked, total };
+        return {
+            pending: pending || 0,
+            locked: locked || 0,
+            total: total || 0,
+        }
     }
 
     unlock = async (id) => {

@@ -38,7 +38,7 @@ function resizeAndConvertToMP3(inputFilePath, outputFilePath, timeoutInMinutes =
                 return;
             }
 
-            const audioBitrate = calculateAudioBitrate(MAX_ASSET_SIZE - 1048576, metadata.format.duration);
+            const audioBitrate = calculateAudioBitrate(MAX_ASSET_SIZE - 1572864, metadata.format.duration);
 
             inputAudio
                 .noVideo()
