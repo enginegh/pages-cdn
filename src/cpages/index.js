@@ -16,7 +16,6 @@ import {
     BULK_UPLOAD_CONCURRENCY,
 } from "./constants.js";
 
-
 export default class Cfetch {
     constructor(account_id, project_name, token) {
         this.session = axios.create({
@@ -311,7 +310,8 @@ export default class Cfetch {
             skipped > 0 ? `(${skipped} already uploaded) ` : "";
 
         logger.info(
-            `CfPages Upload complete: ${sortedFiles.length
+            `CfPages Upload complete: ${
+                sortedFiles.length
             } files ${skippedMessage}${this.formatTime(uploadMs)}`,
         );
 
@@ -406,9 +406,7 @@ export default class Cfetch {
 
                         if (filestat.size > MAX_ASSET_SIZE) {
                             throw new Error(
-                                `Error: Pages only supports files up to ${MAX_ASSET_SIZE
-                                } in size\n${name} is ${filestat.size
-                                } in size`,
+                                `Error: Pages only supports files up to ${MAX_ASSET_SIZE} in size\n${name} is ${filestat.size} in size`,
                             );
                         }
 

@@ -1,5 +1,4 @@
-import { parse } from "smol-toml";
-import { readFileSync, unlinkSync, writeFileSync } from "fs";
+import { unlinkSync, writeFileSync } from "fs";
 import logger from "./lib/logger.js";
 import PQueue from "p-queue";
 import TrackDownloader from "./downloader.js";
@@ -12,7 +11,11 @@ async function main() {
     logger.info("Starting");
 
     const downloader = await TrackDownloader.init(config);
-    const mongoqueue = await MongoQueue.fromMongoURI(config.mongodb.uri, config.mongodb.queue_db, config.mongodb.storage_db);
+    const mongoqueue = await MongoQueue.fromMongoURI(
+        config.mongodb.uri,
+        config.mongodb.queue_db,
+        config.mongodb.storage_db,
+    );
 
     const queue = new PQueue({
         concurrency: config.concurrency || 1,
@@ -27,7 +30,9 @@ async function main() {
     const stats = await mongoqueue.stats();
 
     let limit = config.limit || 1;
-    logger.info(`Total: ${stats.total}, Pending: ${stats.pending}, Locked: ${stats.locked}, Limit: ${limit}, Concurrency: ${queue.concurrency}`);
+    logger.info(
+        `Total: ${stats.total}, Pending: ${stats.pending}, Locked: ${stats.locked}, Limit: ${limit}, Concurrency: ${queue.concurrency}`,
+    );
     while (limit) {
         const doc = await mongoqueue.next();
         if (!doc) {
@@ -35,44 +40,44 @@ async function main() {
         }
 
         logger.debug(`Adding to queue: ${doc._id}`);
-        queue.add(
-            async () => {
-                let success = false;
-                try {
-                    const { track, filePath } = await downloader.download(
-                        doc.spotify,
-                    );
-                    // store track.uri, track.external_ids.isrc, and filePath without downloader.download_dir
-                    // skip if locked_until is in the past
+        queue.add(async () => {
+            let success = false;
+            try {
+                const { track, filePath } = await downloader.download(
+                    doc.spotify,
+                );
+                // store track.uri, track.external_ids.isrc, and filePath without downloader.download_dir
+                // skip if locked_until is in the past
 
-                    if (doc.locked_until > new Date()) {
-                        const manifestEntry = {
-                            spotify: track.id,
-                            isrc: track.external_ids.isrc,
-                            path: encodeURI(
-                                filePath.slice(downloader.download_dir.length),
-                            ),
-                        };
-                        manifest.push(manifestEntry);
-                        succeeded.push(doc._id);
-                        success = true;
-                    } else {
-                        unlinkSync(filePath);
-                    }
-                } catch (error) {
-                    if (error.message === "invalid id") {
-                        logger.error(`Skipping '${doc.spotify}' because it has an invalid id`);
-                        await mongoqueue.delete(doc._id);
-                    } else {
-                        logger.error(error.message);
-                    }
-                } finally {
-                    if (!success) {
-                        await mongoqueue.unlock(doc._id);
-                    }
+                if (doc.locked_until > new Date()) {
+                    const manifestEntry = {
+                        spotify: track.id,
+                        isrc: track.external_ids.isrc,
+                        path: encodeURI(
+                            filePath.slice(downloader.download_dir.length),
+                        ),
+                    };
+                    manifest.push(manifestEntry);
+                    succeeded.push(doc._id);
+                    success = true;
+                } else {
+                    unlinkSync(filePath);
+                }
+            } catch (error) {
+                if (error.message === "invalid id") {
+                    logger.error(
+                        `Skipping '${doc.spotify}' because it has an invalid id`,
+                    );
+                    await mongoqueue.delete(doc._id);
+                } else {
+                    logger.error(error.message);
+                }
+            } finally {
+                if (!success) {
+                    await mongoqueue.unlock(doc._id);
                 }
             }
-        );
+        });
         limit--;
     }
 
@@ -127,7 +132,10 @@ async function main() {
 
     if (config.webhook) {
         logger.info("Sending webhook");
-        const webhook = config.webhook.replace("{url}", baseUrl + "/manifest.json");
+        const webhook = config.webhook.replace(
+            "{url}",
+            baseUrl + "/manifest.json",
+        );
         await axios.get(webhook);
     }
 

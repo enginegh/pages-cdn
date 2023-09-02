@@ -13,7 +13,7 @@ const FFMPEG_TIMEOUT = config.ffmpeg_timeout || 8;
 
 const calculateAudioBitrate = (requiredSize, duration, max = "320k") => {
     // return in format 128k, 256k, 320k
-    const bitrate = Math.floor(requiredSize * 8 / duration / 1000);
+    const bitrate = Math.floor((requiredSize * 8) / duration / 1000);
     return bitrate > 320 ? max : bitrate + "k";
 };
 
@@ -28,7 +28,11 @@ const deleteFile = (filePath) => {
     }
 };
 
-function resizeAndConvertToMP3(inputFilePath, outputFilePath, timeoutInMinutes = FFMPEG_TIMEOUT) {
+function resizeAndConvertToMP3(
+    inputFilePath,
+    outputFilePath,
+    timeoutInMinutes = FFMPEG_TIMEOUT,
+) {
     return new Promise((resolve, reject) => {
         const inputAudio = Ffmpeg(inputFilePath);
 
@@ -38,37 +42,46 @@ function resizeAndConvertToMP3(inputFilePath, outputFilePath, timeoutInMinutes =
                 return;
             }
 
-            const audioBitrate = calculateAudioBitrate(MAX_ASSET_SIZE - 1572864, metadata.format.duration);
+            const audioBitrate = calculateAudioBitrate(
+                MAX_ASSET_SIZE - 1572864,
+                metadata.format.duration,
+            );
 
             inputAudio
                 .noVideo()
-                .audioCodec('libmp3lame')
+                .audioCodec("libmp3lame")
                 .audioBitrate(audioBitrate)
-                .toFormat('mp3')
+                .toFormat("mp3")
                 .output(outputFilePath)
-                .outputOptions([
-                    '-map_metadata -1',
-                ])
-                .on('end', () => {
-                    logger.debug(`Ffmpeg Conversion finished with bitrate ${audioBitrate}`);
+                .outputOptions(["-map_metadata -1"])
+                .on("end", () => {
+                    logger.debug(
+                        `Ffmpeg Conversion finished with bitrate ${audioBitrate}`,
+                    );
                     deleteFile(inputFilePath);
                     resolve(outputFilePath);
                 })
-                .on('error', (err) => {
+                .on("error", (err) => {
                     reject(err);
                 })
-                .on('start', function (commandLine) {
-                    logger.debug('Spawned Ffmpeg with command: ' + commandLine);
+                .on("start", function (commandLine) {
+                    logger.debug("Spawned Ffmpeg with command: " + commandLine);
                 })
                 .run();
 
-            setTimeout(() => {
-                reject(new Error(`Ffpmeg Conversion timed out for ${inputFilePath}`));
-            }, timeoutInMinutes * 60 * 1000);
+            setTimeout(
+                () => {
+                    reject(
+                        new Error(
+                            `Ffpmeg Conversion timed out for ${inputFilePath}`,
+                        ),
+                    );
+                },
+                timeoutInMinutes * 60 * 1000,
+            );
         });
     });
 }
-
 
 export default async (filePath) => {
     const extname = path.extname(filePath).toLowerCase();

@@ -4,7 +4,10 @@ import { searchMusics } from "node-youtube-music";
 import { GetListByKeyword } from "youtube-search-api";
 import ytdl from "ytdl-core";
 import { createWriteStream } from "fs";
-import { getLiteQueryFromMetadata, getQueryFromMetadata } from "../lib/query.js";
+import {
+    getLiteQueryFromMetadata,
+    getQueryFromMetadata,
+} from "../lib/query.js";
 import logger from "../lib/logger.js";
 
 class YoutubeDownloader {
@@ -30,7 +33,6 @@ class YoutubeDownloader {
         });
     }
 }
-
 
 export class Youtube extends YoutubeDownloader {
     static async search(track) {

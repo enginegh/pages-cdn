@@ -71,9 +71,7 @@ export default class TrackDownloader {
             config.deezer.proxy,
         );
 
-        let downloadDir = path.resolve(
-            config.download_dir || "./tracks",
-        );
+        let downloadDir = path.resolve(config.download_dir || "./tracks");
         if (existsSync(downloadDir)) {
             rmSync(downloadDir, { recursive: true });
         }

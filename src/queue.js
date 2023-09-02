@@ -4,8 +4,12 @@ import logger from "./lib/logger.js";
 export default class MongoQueue {
     constructor(mongo, queuedb, storagedb) {
         this.mongo = mongo;
-        this.queuedb = mongo.db(queuedb.split(":")[0]).collection(queuedb.split(":")[1]);
-        this.storagedb = mongo.db(storagedb.split(":")[0]).collection(storagedb.split(":")[1]);
+        this.queuedb = mongo
+            .db(queuedb.split(":")[0])
+            .collection(queuedb.split(":")[1]);
+        this.storagedb = mongo
+            .db(storagedb.split(":")[0])
+            .collection(storagedb.split(":")[1]);
 
         this.pendingFilter = {
             $or: [
@@ -20,7 +24,7 @@ export default class MongoQueue {
 
         await this.storagedb.createIndex({ spotify: 1 }, { unique: true });
         await this.storagedb.createIndex({ isrc: 1 });
-    }
+    };
 
     next = async () => {
         const doc = await this.queuedb.findOneAndUpdate(
@@ -30,7 +34,7 @@ export default class MongoQueue {
                     locked_until: new Date(Date.now() + 3600000),
                 },
             },
-            { sort: { _id: 1 }, returnDocument: "after"},
+            { sort: { _id: 1 }, returnDocument: "after" },
         );
         if (doc) {
             if (await this.storagedb.findOne({ spotify: doc.spotify })) {
@@ -42,7 +46,7 @@ export default class MongoQueue {
             }
         }
         return doc;
-    }
+    };
 
     stats = async () => {
         // if locked_until is in the past, it's pending
@@ -56,43 +60,44 @@ export default class MongoQueue {
 
         // using aggregation
 
-        const stats = await this.queuedb.aggregate([
-            {
-                $facet: {
-                    pending: [
-                        {
-                            $match: this.pendingFilter,
-                        },
-                        {
-                            $count: "count",
-                        },
-                    ],
-                    locked: [
-                        {
-                            $match: {
-                                locked_until: { $gt: new Date() },
+        const stats = await this.queuedb
+            .aggregate([
+                {
+                    $facet: {
+                        pending: [
+                            {
+                                $match: this.pendingFilter,
                             },
-                        },
-                        {
-                            $count: "count",
-                        },
-                    ],
-                    total: [
-                        {
-                            $count: "count",
-                        },
-                    ],
+                            {
+                                $count: "count",
+                            },
+                        ],
+                        locked: [
+                            {
+                                $match: {
+                                    locked_until: { $gt: new Date() },
+                                },
+                            },
+                            {
+                                $count: "count",
+                            },
+                        ],
+                        total: [
+                            {
+                                $count: "count",
+                            },
+                        ],
+                    },
                 },
-            },
-            {
-                $project: {
-                    pending: { $arrayElemAt: ["$pending.count", 0] },
-                    locked: { $arrayElemAt: ["$locked.count", 0] },
-                    total: { $arrayElemAt: ["$total.count", 0] },
+                {
+                    $project: {
+                        pending: { $arrayElemAt: ["$pending.count", 0] },
+                        locked: { $arrayElemAt: ["$locked.count", 0] },
+                        total: { $arrayElemAt: ["$total.count", 0] },
+                    },
                 },
-
-            },
-        ]).toArray();
+            ])
+            .toArray();
 
         const { pending, locked, total } = stats[0];
 
@@ -100,8 +105,8 @@ export default class MongoQueue {
             pending: pending || 0,
             locked: locked || 0,
             total: total || 0,
-        }
-    }
+        };
+    };
 
     unlock = async (id) => {
         await this.queuedb.updateOne(
@@ -110,41 +115,51 @@ export default class MongoQueue {
                 $unset: { locked_until: "" },
             },
         );
-    }
+    };
 
     markSucceeded = async (ids, manifestEntries) => {
         try {
-            const insertions = await this.storagedb.insertMany(manifestEntries, { ordered: false });
-            logger.debug(`Inserted ${insertions.insertedCount} entries into storage`);
+            const insertions = await this.storagedb.insertMany(
+                manifestEntries,
+                { ordered: false },
+            );
+            logger.debug(
+                `Inserted ${insertions.insertedCount} entries into storage`,
+            );
         } catch (error) {
             if (error.code !== 11000) {
                 throw error;
             }
             // log duplicate entries count and inserted entries count
-            logger.debug(`Inserted ${error.result.nInserted} entries into storage`);
-            logger.debug(`Skipped ${error.result.nInserted - error.result.nUpserted} duplicate entries`);
+            logger.debug(
+                `Inserted ${error.result.nInserted} entries into storage`,
+            );
+            logger.debug(
+                `Skipped ${
+                    error.result.nInserted - error.result.nUpserted
+                } duplicate entries`,
+            );
         }
         await this.queuedb.deleteMany({ _id: { $in: ids } });
-    }
+    };
 
     delete = async (id) => {
         await this.queuedb.deleteOne({ _id: id });
-    }
+    };
 
-    close = async (exit=false) => {
+    close = async (exit = false) => {
         await this.mongo.close();
         if (exit) {
             logger.debug("Exiting");
             process.exit(0);
         }
-    }
+    };
 
     static async fromMongoURI(uri, queuedb, storagedb) {
         const mongo = new MongoClient(uri);
         try {
             await mongo.connect();
-        }
-        catch (error) {
+        } catch (error) {
             logger.error(error);
             process.exit(1);
         }
