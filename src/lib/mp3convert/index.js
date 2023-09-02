@@ -71,32 +71,32 @@ function resizeAndConvertToMP3(inputFilePath, outputFilePath, bitrate) {
                     `Bitrate is too low: ${bitrate} for file: ${inputFilePath}`,
                 ),
             );
+        } else {
+            convertToMP3(inputFilePath, outputFilePath, bitrate)
+                .then((filePath) => {
+                    const stats = statSync(filePath);
+                    if (stats.size < MAX_ASSET_SIZE) {
+                        deleteFile(inputFilePath);
+                        resolve(filePath);
+                    } else {
+                        // if size is still too large, try again with bitrate -10k
+                        const newBitrate = bitrate - 10;
+                        logger.debug(
+                            `File size is still too large, trying again with bitrate ${bitrate} -> ${newBitrate}: ${filePath}`,
+                        );
+                        resolve(
+                            resizeAndConvertToMP3(
+                                inputFilePath,
+                                outputFilePath,
+                                newBitrate,
+                            ),
+                        );
+                    }
+                })
+                .catch((error) => {
+                    reject(error);
+                });
         }
-
-        convertToMP3(inputFilePath, outputFilePath, bitrate)
-            .then((filePath) => {
-                const stats = statSync(filePath);
-                if (stats.size < MAX_ASSET_SIZE) {
-                    deleteFile(inputFilePath);
-                    resolve(filePath);
-                } else {
-                    // if size is still too large, try again with bitrate -10k
-                    const newBitrate = bitrate - 10;
-                    logger.debug(
-                        `File size is still too large, trying again with bitrate ${bitrate} -> ${newBitrate}: ${filePath}`,
-                    );
-                    resolve(
-                        resizeAndConvertToMP3(
-                            inputFilePath,
-                            outputFilePath,
-                            newBitrate,
-                        ),
-                    );
-                }
-            })
-            .catch((error) => {
-                reject(error);
-            });
     });
 }
 
