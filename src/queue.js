@@ -132,12 +132,10 @@ export default class MongoQueue {
             }
             // log duplicate entries count and inserted entries count
             logger.debug(
-                `Inserted ${error.result.nInserted} entries into storage`,
+                `Inserted ${error.insertedCount} entries into storage`,
             );
             logger.debug(
-                `Skipped ${
-                    error.result.nInserted - error.result.nUpserted
-                } duplicate entries`,
+                `Skipped ${error.getWriteErrorCount()} duplicate entries`,
             );
         }
         await this.queuedb.deleteMany({ _id: { $in: ids } });

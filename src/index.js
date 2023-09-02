@@ -132,10 +132,9 @@ async function main() {
 
     if (config.webhook) {
         logger.info("Sending webhook");
-        const webhook = config.webhook.replace(
-            "{url}",
-            baseUrl + "/manifest.json",
-        ).replace("{count}", manifest.length);
+        const webhook = config.webhook
+            .replace("{url}", baseUrl + "/manifest.json")
+            .replace("{count}", manifest.length);
         await axios.get(webhook);
     }
 
