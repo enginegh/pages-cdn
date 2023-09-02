@@ -14,6 +14,17 @@ const calculateAudioBitrate = (requiredSize, duration, max = "320k") => {
     return bitrate > 320 ? max : bitrate + "k";
 };
 
+const deleteFile = (filePath) => {
+    try {
+        unlinkSync(filePath);
+    } catch (error) {
+        // ignore if file does not exist
+        if (error.code !== "ENOENT") {
+            throw error;
+        }
+    }
+};
+
 function resizeAndConvertToMP3(inputFilePath, outputFilePath, timeoutInMinutes = 5) {
     return new Promise((resolve, reject) => {
         const inputAudio = Ffmpeg(inputFilePath);
@@ -37,7 +48,7 @@ function resizeAndConvertToMP3(inputFilePath, outputFilePath, timeoutInMinutes =
                 ])
                 .on('end', () => {
                     logger.debug(`Ffmpeg Conversion finished with bitrate ${audioBitrate}`);
-                    unlinkSync(inputFilePath);
+                    deleteFile(inputFilePath);
                     resolve(outputFilePath);
                 })
                 .on('error', (err) => {
@@ -72,6 +83,7 @@ export default async (filePath) => {
         return await resizeAndConvertToMP3(tempFilePath, desiredfilePath);
     } catch (error) {
         renameSync(tempFilePath, filePath);
+        deleteFile(desiredfilePath);
         throw error;
     }
 };
