@@ -4,7 +4,7 @@ import { searchMusics } from "node-youtube-music";
 import { GetListByKeyword } from "youtube-search-api";
 import ytdl from "ytdl-core";
 import { createWriteStream } from "fs";
-import { getQueryFromMetadata } from "../lib/query.js";
+import { getLiteQueryFromMetadata, getQueryFromMetadata } from "../lib/query.js";
 import logger from "../lib/logger.js";
 
 class YoutubeDownloader {
@@ -61,5 +61,17 @@ export class YoutubeMusic extends YoutubeDownloader {
             return null;
         }
         return filteredMusics[0].youtubeId;
+    }
+}
+
+export class YoutubeLite extends YoutubeDownloader {
+    static async search(track) {
+        const query = getLiteQueryFromMetadata(track);
+        const results = await GetListByKeyword(query, false, 1);
+        if (!results.items.length) {
+            logger.debug(`[youtube] No results found for ${query}`);
+            return null;
+        }
+        return results.items[0].id;
     }
 }

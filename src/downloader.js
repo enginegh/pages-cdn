@@ -2,7 +2,7 @@
 import logger from "./lib/logger.js";
 import Spotify from "./lib/spotify.js";
 import DeezerDownloader from "./providers/deezer.js";
-import { Youtube, YoutubeMusic } from "./providers/youtube.js";
+import { Youtube, YoutubeLite, YoutubeMusic } from "./providers/youtube.js";
 import ID3Writer from "./lib/id3writer.js";
 import path from "path";
 import { existsSync, mkdirSync, rmSync } from "fs";
@@ -79,7 +79,7 @@ export default class TrackDownloader {
         }
         mkdirSync(downloadDir);
 
-        const providers = [deezer, YoutubeMusic, Youtube];
+        const providers = [YoutubeMusic, deezer, Youtube, YoutubeLite];
         return new TrackDownloader(spotify, providers, downloadDir);
     };
 }
