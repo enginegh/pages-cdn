@@ -19,7 +19,7 @@ class YoutubeDownloader {
         const stream = ytdl.downloadFromInfo(musicInfo, { format: format });
         fileName = `${fileName}.${format.container}`;
         // write stream to file and block until finished
-        return await new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => {
             stream
                 .pipe(createWriteStream(fileName))
                 .on("finish", () => {
