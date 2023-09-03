@@ -68,7 +68,7 @@ const resizeAndConvertToMP3 = async (inputFilePath, outputFilePath, bitrate) => 
             return;
         }
         bitrate = calculateAudioBitrate(
-            MAX_ASSET_SIZE - 2 * 1024 * 1024,
+            MAX_ASSET_SIZE - 2.5 * 1024 * 1024,
             metadata.format.duration,
         );
     }
