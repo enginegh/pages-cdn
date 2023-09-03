@@ -58,49 +58,40 @@ const convertToMP3 = (
 
 const resizeAndConvertToMP3 = async (inputFilePath, outputFilePath, bitrate) => {
     // calculate bitrate and convert to mp3 if the size is still too large then convert again with bitrate -10k
-    return new Promise(async (resolve, reject) => {
-        if (!bitrate) {
-            const metadata = await videoMetadata(inputFilePath);
-            // reject if duration is bigger than 20 minutes
-            if (metadata.format.duration > 20 * 60) {
-                reject(
-                    new Error(
-                        `File duration is too long: ${metadata.duration}`,
-                    ),
-                );
-                return;
-            }
-            bitrate = calculateAudioBitrate(
-                MAX_ASSET_SIZE - 2 * 1024 * 1024,
-                metadata.format.duration,
+    if (!bitrate) {
+        const metadata = await videoMetadata(inputFilePath);
+        // reject if duration is bigger than 20 minutes
+        if (metadata.format.duration > 20 * 60) {
+            reject(
+                new Error(
+                    `File duration is too long: ${metadata.duration}`,
+                ),
             );
+            return;
         }
+        bitrate = calculateAudioBitrate(
+            MAX_ASSET_SIZE - 2 * 1024 * 1024,
+            metadata.format.duration,
+        );
+    }
 
-        convertToMP3(inputFilePath, outputFilePath, bitrate)
-            .then((filePath) => {
-                const stats = statSync(filePath);
-                if (stats.size < MAX_ASSET_SIZE) {
-                    deleteFile(inputFilePath);
-                    resolve(filePath);
-                } else {
-                    // if size is still too large, try again with bitrate -10k
-                    const newBitrate = bitrate - 10;
-                    logger.debug(
-                        `File size is still too large, trying again with bitrate ${bitrate} -> ${newBitrate}: ${filePath}`,
-                    );
-                    resolve(
-                        resizeAndConvertToMP3(
-                            inputFilePath,
-                            outputFilePath,
-                            newBitrate,
-                        ),
-                    );
-                }
-            })
-            .catch((error) => {
-                reject(error);
-            });
-    });
+    const filePath = await convertToMP3(inputFilePath, outputFilePath, bitrate);
+    const stats = statSync(filePath);
+    if (stats.size < MAX_ASSET_SIZE) {
+        deleteFile(inputFilePath);
+        return filePath;
+    }
+
+    // if size is still too large, try again with bitrate -10k
+    const newBitrate = bitrate - 10;
+    logger.debug(
+        `File size is still too large, trying again with bitrate ${bitrate} -> ${newBitrate}: ${filePath}`,
+    );
+    return await resizeAndConvertToMP3(
+        inputFilePath,
+        outputFilePath,
+        newBitrate,
+    );
 }
 
 export default async (filePath) => {
