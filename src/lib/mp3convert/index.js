@@ -56,7 +56,7 @@ const convertToMP3 = (
     });
 };
 
-function resizeAndConvertToMP3(inputFilePath, outputFilePath, bitrate) {
+const resizeAndConvertToMP3 = async (inputFilePath, outputFilePath, bitrate) => {
     // calculate bitrate and convert to mp3 if the size is still too large then convert again with bitrate -10k
     return new Promise(async (resolve, reject) => {
         if (!bitrate) {
@@ -72,8 +72,8 @@ function resizeAndConvertToMP3(inputFilePath, outputFilePath, bitrate) {
             }
             bitrate = calculateAudioBitrate(
                 MAX_ASSET_SIZE - 2 * 1024 * 1024,
-                metadata.format.duration
-            )
+                metadata.format.duration,
+            );
         }
 
         convertToMP3(inputFilePath, outputFilePath, bitrate)

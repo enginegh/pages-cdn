@@ -167,8 +167,11 @@ export default class DeezerDownloader {
 
         const track = tracks[0];
 
-        const score = compareTwoStrings(track.title.toLowerCase(), inputTrack.name.toLowerCase())
-        
+        const score = compareTwoStrings(
+            track.title.toLowerCase(),
+            inputTrack.name.toLowerCase(),
+        );
+
         if (score < 0.7) {
             logger.debug(`[Deezer] No matching results found for ${query}`);
             return null;

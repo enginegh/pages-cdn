@@ -17,7 +17,7 @@ export default class TrackDownloader {
 
     async download(trackId) {
         const track = await this.spotify.track(trackId);
-        
+
         if (!track.name) {
             throw new Error(`invalid id`);
         }
@@ -56,17 +56,13 @@ export default class TrackDownloader {
         // write tags
         logger.debug("Writing tags...");
         await ID3Writer.spotifyWrite(track, filePath);
-        logger.info(
-            `Downloaded ${track.name} - ${trackId}`,
-        );
+        logger.info(`Downloaded ${track.name} - ${trackId}`);
         return { track, filePath };
     }
-
 
     deleteDownloadDir = () => {
         rmSync(this.download_dir, { recursive: true });
     };
-
 
     static init = async (config) => {
         const spotify = await Spotify.fromCredentials(

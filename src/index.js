@@ -69,8 +69,9 @@ async function main() {
                         `Skipping '${doc.spotify}' because it has an invalid id`,
                     );
                     await mongoqueue.delete(doc._id);
-                }
-                else if (error.message.startsWith("File duration is too long")) {
+                } else if (
+                    error.message.startsWith("File duration is too long")
+                ) {
                     logger.error(
                         `Skipping '${doc.spotify}' because duration is too long`,
                     );

@@ -118,26 +118,25 @@ export default class MongoQueue {
     };
 
     markSucceeded = async (ids, manifestEntries) => {
-        try {
-            const insertions = await this.storagedb.insertMany(
-                manifestEntries,
-                { ordered: false },
-            );
-            logger.debug(
-                `Inserted ${insertions.insertedCount} entries into storage`,
-            );
-        } catch (error) {
-            if (error.code !== 11000) {
-                throw error;
-            }
-            // log duplicate entries count and inserted entries count
-            logger.debug(
-                `Inserted ${error.insertedCount} entries into storage`,
-            );
-            logger.debug(
-                `Skipped ${error.result.result.writeErrors.length} duplicate entries`,
-            );
-        }
+        // update or upsert using spotify or isrc
+        const result = await this.storagedb.bulkWrite(
+            manifestEntries.map((entry) => ({
+                updateOne: {
+                    filter: {
+                        spotify: entry.spotify,
+                        isrc: entry.isrc,
+                    },
+                    update: { $set: entry },
+                    upsert: true,
+                },
+            })),
+        );
+        // log upsert and update count separately
+        logger.debug(
+            `Inserted ${result.upsertedCount} and updated ${result.modifiedCount} entries in storage`,
+        );
+
+        // delete from queue
         await this.queuedb.deleteMany({ _id: { $in: ids } });
     };
 

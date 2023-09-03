@@ -20,7 +20,7 @@ class YoutubeDownloader {
                         cookie: config?.youtube?.cookies || "",
                     },
                 },
-            }
+            },
         );
         const format = ytdl.chooseFormat(musicInfo.formats, {
             quality: "highestaudio",
@@ -80,12 +80,14 @@ export class YoutubeMusic {
         const songName = song.name
             .replace(/\((feat|prod).+\)/gm, "")
             .replace(/\(From\s.+\)/gm, "")
-            .toLowerCase().trim()
+            .toLowerCase()
+            .trim();
         const trackName = track.name
             .replace(/\((feat|prod).+\)/gm, "")
             .replace(/\(From\s.+\)/gm, "")
-            .toLowerCase().trim()
-        const score = compareTwoStrings(songName, trackName)
+            .toLowerCase()
+            .trim();
+        const score = compareTwoStrings(songName, trackName);
         if (score < 0.7) {
             logger.debug(`[yt-music] No matching results found for ${query}`);
             return null;
