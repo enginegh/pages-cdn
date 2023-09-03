@@ -3,17 +3,17 @@
         "axios": "^1.5.0",
         "blake3-wasm": "^2.1.5",
         "browser-id3-writer": "^6.0.0",
-        "fastest-levenshtein": "^1.0.16",
         "fluent-ffmpeg": "^2.1.2",
         "mime": "^3.0.0",
         "mongodb": "^6.0.0",
         "node-id3": "^0.2.6",
         "p-queue": "^7.3.4",
         "smol-toml": "^1.1.2",
+        "string-similarity": "^4.0.4",
         "winston": "^3.10.0",
         "youtube-music-api": "^1.0.6",
         "youtube-search-api": "^1.2.1",
-        "ytdl-core": "^4.11.4"
+        "ytdl-core": "github:eugabrielsilva/node-ytdl-core#f8b44b6727be87da46f6dbabc6f46e4efbd96436"
     },
     "type": "module",
     "devDependencies": {

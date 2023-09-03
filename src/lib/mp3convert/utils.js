@@ -8,18 +8,14 @@ export const calculateAudioBitrate = (requiredSize, duration, max = 320) => {
     return bitrate > 320 ? max : bitrate;
 };
 
-export const calculateAudioBitrateByFile = (requiredSize, filePath) => {
+export const videoMetadata = (filePath) => {
     return new Promise((resolve, reject) => {
         const inputAudio = Ffmpeg(filePath);
         inputAudio.ffprobe((err, data) => {
             if (err) {
                 reject(err);
             }
-            const bitrate = calculateAudioBitrate(
-                requiredSize,
-                data.format.duration,
-            );
-            resolve(bitrate);
+            resolve(data);
         });
     });
 };

@@ -42,6 +42,7 @@ jobs:
               timeout-minutes: 60
               env:
                   CONFIG: ${{ secrets.CONFIG }}
+                  NODE_OPTIONS: --openssl-legacy-provider
               run: |
                   npm start
 

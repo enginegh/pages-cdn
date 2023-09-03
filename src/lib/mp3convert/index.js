@@ -1,13 +1,14 @@
 import { statSync } from "fs";
 import path from "path";
 import Ffmpeg from "fluent-ffmpeg";
-import { MAX_ASSET_SIZE } from "../../cpages/constants.js";
+import { MAX_ASSET_SIZE, MAX_BUCKET_SIZE } from "../../cpages/constants.js";
 import logger from "../logger.js";
 import config from "../config.js";
 import {
-    calculateAudioBitrateByFile,
     deleteFile,
     createTempFilePath,
+    videoMetadata,
+    calculateAudioBitrate,
 } from "./utils.js";
 
 const FFMPEG_TIMEOUT = config.ffmpeg_timeout || 8;
@@ -30,7 +31,7 @@ const convertToMP3 = (
             .outputOptions(["-map_metadata -1"])
             .on("end", () => {
                 logger.debug(
-                    `Ffmpeg Conversion finished with bitrate ${bitrate}`,
+                    `Ffmpeg Conversion finished with bitrate ${bitrate}k: ${inputFilePath}`,
                 );
                 resolve(outputFilePath);
             })
@@ -59,44 +60,46 @@ function resizeAndConvertToMP3(inputFilePath, outputFilePath, bitrate) {
     // calculate bitrate and convert to mp3 if the size is still too large then convert again with bitrate -10k
     return new Promise(async (resolve, reject) => {
         if (!bitrate) {
-            bitrate = await calculateAudioBitrateByFile(
-                MAX_ASSET_SIZE - 2097152,
-                inputFilePath,
-            );
+            const metadata = await videoMetadata(inputFilePath);
+            // reject if duration is bigger than 20 minutes
+            if (metadata.format.duration > 20 * 60) {
+                reject(
+                    new Error(
+                        `File duration is too long: ${metadata.duration}`,
+                    ),
+                );
+                return;
+            }
+            bitrate = calculateAudioBitrate(
+                MAX_ASSET_SIZE - 2 * 1024 * 1024,
+                metadata.format.duration
+            )
         }
 
-        if (bitrate < 32) {
-            reject(
-                new Error(
-                    `Bitrate is too low: ${bitrate} for file: ${inputFilePath}`,
-                ),
-            );
-        } else {
-            convertToMP3(inputFilePath, outputFilePath, bitrate)
-                .then((filePath) => {
-                    const stats = statSync(filePath);
-                    if (stats.size < MAX_ASSET_SIZE) {
-                        deleteFile(inputFilePath);
-                        resolve(filePath);
-                    } else {
-                        // if size is still too large, try again with bitrate -10k
-                        const newBitrate = bitrate - 10;
-                        logger.debug(
-                            `File size is still too large, trying again with bitrate ${bitrate} -> ${newBitrate}: ${filePath}`,
-                        );
-                        resolve(
-                            resizeAndConvertToMP3(
-                                inputFilePath,
-                                outputFilePath,
-                                newBitrate,
-                            ),
-                        );
-                    }
-                })
-                .catch((error) => {
-                    reject(error);
-                });
-        }
+        convertToMP3(inputFilePath, outputFilePath, bitrate)
+            .then((filePath) => {
+                const stats = statSync(filePath);
+                if (stats.size < MAX_ASSET_SIZE) {
+                    deleteFile(inputFilePath);
+                    resolve(filePath);
+                } else {
+                    // if size is still too large, try again with bitrate -10k
+                    const newBitrate = bitrate - 10;
+                    logger.debug(
+                        `File size is still too large, trying again with bitrate ${bitrate} -> ${newBitrate}: ${filePath}`,
+                    );
+                    resolve(
+                        resizeAndConvertToMP3(
+                            inputFilePath,
+                            outputFilePath,
+                            newBitrate,
+                        ),
+                    );
+                }
+            })
+            .catch((error) => {
+                reject(error);
+            });
     });
 }
 
@@ -105,6 +108,7 @@ export default async (filePath) => {
     const stats = statSync(filePath);
 
     if (extname === ".mp3" && stats.size < MAX_ASSET_SIZE) {
+        logger.debug(`File is already mp3 and under size: ${filePath}`);
         return filePath;
     }
 

@@ -6,7 +6,7 @@ import { Youtube, YoutubeLite, YoutubeMusic } from "./providers/youtube.js";
 import ID3Writer from "./lib/id3writer.js";
 import path from "path";
 import { existsSync, mkdirSync, rmSync } from "fs";
-import convertToMP3 from "./lib/mp3convert/index.js";
+import mp3convert from "./lib/mp3convert/index.js";
 
 export default class TrackDownloader {
     constructor(spotify, providers, download_dir) {
@@ -47,24 +47,26 @@ export default class TrackDownloader {
 
         if (!filePath) {
             throw new Error(
-                `[downloader] Track not found for ${track.name} - ${track.artists[0].name} - ${trackId}`,
+                `[downloader] Track not found for ${track.name} - ${trackId}`,
             );
         }
 
-        filePath = await convertToMP3(filePath);
+        filePath = await mp3convert(filePath);
 
         // write tags
         logger.debug("Writing tags...");
         await ID3Writer.spotifyWrite(track, filePath);
         logger.info(
-            `Downloaded ${track.name} - ${track.artists[0].name} - ${trackId}`,
+            `Downloaded ${track.name} - ${trackId}`,
         );
         return { track, filePath };
     }
 
+
     deleteDownloadDir = () => {
         rmSync(this.download_dir, { recursive: true });
     };
+
 
     static init = async (config) => {
         const spotify = await Spotify.fromCredentials(

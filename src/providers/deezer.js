@@ -3,6 +3,7 @@ import crypto from "crypto";
 import fs from "fs";
 import { getQueryFromMetadata } from "../lib/query.js";
 import logger from "../lib/logger.js";
+import { compareTwoStrings } from "string-similarity";
 
 export default class DeezerDownloader {
     constructor(cookies, proxy) {
@@ -153,8 +154,8 @@ export default class DeezerDownloader {
             });
     };
 
-    search = async (track) => {
-        const query = getQueryFromMetadata(track);
+    search = async (inputTrack) => {
+        const query = getQueryFromMetadata(inputTrack);
         const response = await this.session.get(
             `https://api.deezer.com/search?q=${query}`,
         );
@@ -163,17 +164,17 @@ export default class DeezerDownloader {
             logger.debug(`[Deezer] No results found for ${query}`);
             return null;
         }
-        const filteredTracks = tracks.filter((track) => {
-            return (
-                track.album.title === track.album.name ||
-                Math.abs(track.duration - track.duration_ms / 1000) < 3
-            );
-        });
-        if (!filteredTracks.length) {
+
+        const track = tracks[0];
+
+        const score = compareTwoStrings(track.title.toLowerCase(), inputTrack.name.toLowerCase())
+        
+        if (score < 0.7) {
             logger.debug(`[Deezer] No matching results found for ${query}`);
             return null;
         }
-        return filteredTracks[0].id;
+
+        return track.id;
     };
 
     downloadTrackById = async (trackId) => {
@@ -182,7 +183,7 @@ export default class DeezerDownloader {
             const outputFileName = `${trackInfo.ART_NAME} - ${trackInfo.SNG_TITLE}.mp3`;
             await this.downloadTrack(trackInfo, outputFileName);
         } catch (error) {
-            console.error(error);
+            logger.error(error);
         }
     };
 

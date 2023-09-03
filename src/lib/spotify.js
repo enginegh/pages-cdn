@@ -83,8 +83,8 @@ export default class Spotify {
                 return response.data;
             })
             .catch((error) => {
-                if (error.response) {
-                    throw new Error(error.response.data?.error?.message);
+                if (error.response.data?.error?.message) {
+                    throw new Error(error.response.data.error.message);
                 }
                 throw new Error(error.message);
             });
