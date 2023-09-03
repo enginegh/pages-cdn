@@ -62,11 +62,9 @@ const resizeAndConvertToMP3 = async (inputFilePath, outputFilePath, bitrate) => 
         const metadata = await videoMetadata(inputFilePath);
         // reject if duration is bigger than 20 minutes
         if (metadata.format.duration > 20 * 60) {
-            reject(
-                new Error(
+            throw new Error(
                     `File duration is too long: ${metadata.duration}`,
-                ),
-            );
+                )
             return;
         }
         bitrate = calculateAudioBitrate(
