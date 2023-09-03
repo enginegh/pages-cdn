@@ -78,7 +78,8 @@ export class YoutubeMusic {
         }
 
         const songName = song.name.replace(/\((feat|prod)\.[\w\s]+\)/gm, "").toLowerCase().trim()
-        const score = compareTwoStrings(songName, track.name.toLowerCase())
+        const trackName = track.name.replace(/\((feat|prod)\.[\w\s]+\)/gm, "").toLowerCase().trim()
+        const score = compareTwoStrings(songName, trackName)
         if (score < 0.7) {
             logger.debug(`[yt-music] No matching results found for ${query}`);
             return null;
