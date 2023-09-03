@@ -77,8 +77,14 @@ export class YoutubeMusic {
             return null;
         }
 
-        const songName = song.name.replace(/\((feat|prod)\.[\w\s]+\)/gm, "").toLowerCase().trim()
-        const trackName = track.name.replace(/\((feat|prod)\.[\w\s]+\)/gm, "").toLowerCase().trim()
+        const songName = song.name
+            .replace(/\((feat|prod).+\)/gm, "")
+            .replace(/\(From\s.+\)/gm, "")
+            .toLowerCase().trim()
+        const trackName = track.name
+            .replace(/\((feat|prod).+\)/gm, "")
+            .replace(/\(From\s.+\)/gm, "")
+            .toLowerCase().trim()
         const score = compareTwoStrings(songName, trackName)
         if (score < 0.7) {
             logger.debug(`[yt-music] No matching results found for ${query}`);
