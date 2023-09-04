@@ -56,15 +56,17 @@ const convertToMP3 = (
     });
 };
 
-const resizeAndConvertToMP3 = async (inputFilePath, outputFilePath, bitrate) => {
+const resizeAndConvertToMP3 = async (
+    inputFilePath,
+    outputFilePath,
+    bitrate,
+) => {
     // calculate bitrate and convert to mp3 if the size is still too large then convert again with bitrate -10k
     if (!bitrate) {
         const metadata = await videoMetadata(inputFilePath);
         // reject if duration is bigger than 20 minutes
         if (metadata.format.duration > 20 * 60) {
-            throw new Error(
-                    `File duration is too long: ${metadata.duration}`,
-                )
+            throw new Error(`File duration is too long: ${metadata.duration}`);
             return;
         }
         bitrate = calculateAudioBitrate(
@@ -90,7 +92,7 @@ const resizeAndConvertToMP3 = async (inputFilePath, outputFilePath, bitrate) => 
         outputFilePath,
         newBitrate,
     );
-}
+};
 
 export default async (filePath) => {
     const extname = path.extname(filePath).toLowerCase();
