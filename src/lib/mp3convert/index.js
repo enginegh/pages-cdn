@@ -1,116 +1,135 @@
-import { statSync } from "fs";
+import { renameSync, statSync } from "fs";
 import path from "path";
 import Ffmpeg from "fluent-ffmpeg";
-import { MAX_ASSET_SIZE, MAX_BUCKET_SIZE } from "../../cpages/constants.js";
 import logger from "../logger.js";
 import config from "../config.js";
-import {
-    deleteFile,
-    createTempFilePath,
-    videoMetadata,
-    calculateAudioBitrate,
-} from "./utils.js";
+import { deleteFile, videoMetadata, calculateAudioBitrate } from "./utils.js";
+import { MAX_ASSET_SIZE as CFPAGES_MAX_ASSET_SIZE } from "../../cpages/constants.js";
 
 const FFMPEG_TIMEOUT = config.ffmpeg_timeout || 8;
+const MAX_ASSET_SIZE = CFPAGES_MAX_ASSET_SIZE - 1 * 1024 * 1024; // 1MB for metadata
 
-const convertToMP3 = (
-    inputFilePath,
-    outputFilePath,
-    bitrate,
-    timeoutInMinutes = FFMPEG_TIMEOUT,
-) => {
-    return new Promise((resolve, reject) => {
-        const inputAudio = Ffmpeg(inputFilePath);
-
-        inputAudio
-            .noVideo()
-            .audioCodec("libmp3lame")
-            .audioBitrate(bitrate)
-            .toFormat("mp3")
-            .output(outputFilePath)
-            .outputOptions(["-map_metadata -1"])
-            .on("end", () => {
-                logger.debug(
-                    `Ffmpeg Conversion finished with bitrate ${bitrate}k: ${inputFilePath}`,
-                );
-                resolve(outputFilePath);
-            })
-            .on("error", (err) => {
-                reject(err);
-            })
-            .on("start", function (commandLine) {
-                logger.debug("Spawned Ffmpeg with command: " + commandLine);
-            })
-            .run();
-
-        setTimeout(
-            () => {
-                reject(
-                    new Error(
-                        `Ffpmeg Conversion timed out for ${inputFilePath}`,
-                    ),
-                );
+class AudioConverter {
+    constructor(max_asset_size, ffmpeg_timeout, max_duration) {
+        this.max_asset_size = max_asset_size || MAX_ASSET_SIZE;
+        this.ffmpeg_timeout = ffmpeg_timeout || FFMPEG_TIMEOUT;
+        this.max_duration = max_duration || 34 * 60;
+        this.ffmpeg_settings = {
+            mp3: {
+                audioCodec: "libmp3lame",
+                toFormat: "mp3",
             },
-            timeoutInMinutes * 60 * 1000,
-        );
-    });
-};
+            ogg: {
+                audioCodec: "libvorbis",
+                toFormat: "ogg",
+            },
+        };
+    }
 
-const resizeAndConvertToMP3 = async (
-    inputFilePath,
-    outputFilePath,
-    bitrate,
-) => {
-    // calculate bitrate and convert to mp3 if the size is still too large then convert again with bitrate -10k
-    if (!bitrate) {
-        const metadata = await videoMetadata(inputFilePath);
-        // reject if duration is bigger than 20 minutes
-        if (metadata.format.duration > 20 * 60) {
-            throw new Error(`File duration is too long: ${metadata.duration}`);
-            return;
+    convert = async (inputFilePath, format) => {
+        if (!this.check(inputFilePath, format)) {
+            const outfile = await this.resizeAndConvert(inputFilePath, format);
+            // change extension of inputFilePath to outfile extension
+            const newFilePath =
+                inputFilePath.slice(0, -path.extname(inputFilePath).length) +
+                path.extname(outfile);
+            deleteFile(inputFilePath);
+            renameSync(outfile, newFilePath);
+            return newFilePath;
         }
-        bitrate = calculateAudioBitrate(
-            MAX_ASSET_SIZE - 2.5 * 1024 * 1024,
+        return inputFilePath;
+    };
+
+    resizeAndConvert = async (inputFilePath, format, bitrate) => {
+        if (!bitrate) {
+            bitrate = await this.calculateBitrate(inputFilePath);
+        }
+
+        const outfile = await this.ffmpegConvert(inputFilePath, {
+            bitrate,
+            ...this.ffmpeg_settings[format],
+        });
+
+        if (!this.check(outfile, format)) {
+            const new_bitrate = bitrate - 4; // -4k
+            logger.warn(
+                `Output file is too big: ${outfile}, trying again with bitrate ${new_bitrate}k`,
+            );
+            return await this.resizeAndConvert(
+                inputFilePath,
+                format,
+                new_bitrate,
+            );
+        }
+
+        return outfile;
+    };
+
+    check = (inputFilePath, format) => {
+        const stats = statSync(inputFilePath);
+        const extname = path.extname(inputFilePath).toLowerCase();
+        return stats.size < this.max_asset_size && extname === `.${format}`;
+    };
+
+    calculateBitrate = async (inputFilePath) => {
+        const metadata = await videoMetadata(inputFilePath);
+        // reject if duration is bigger than 34 minutes
+        if (metadata.format.duration > this.max_duration) {
+            throw new Error(
+                `File duration is too long: ${metadata.format.duration}, max duration ${this.max_duration}`,
+            );
+        }
+
+        return calculateAudioBitrate(
+            this.max_asset_size - 1 * 1024 * 1024, // 1MB for surity
             metadata.format.duration,
         );
-    }
+    };
 
-    const filePath = await convertToMP3(inputFilePath, outputFilePath, bitrate);
-    const stats = statSync(filePath);
-    if (stats.size < MAX_ASSET_SIZE) {
-        deleteFile(inputFilePath);
-        return filePath;
-    }
-
-    // if size is still too large, try again with bitrate -10k
-    const newBitrate = bitrate - 10;
-    logger.debug(
-        `File size is still too large, trying again with bitrate ${bitrate} -> ${newBitrate}: ${filePath}`,
-    );
-    return await resizeAndConvertToMP3(
+    ffmpegConvert = async (
         inputFilePath,
-        outputFilePath,
-        newBitrate,
-    );
-};
+        { bitrate, audioCodec, toFormat },
+    ) => {
+        let timer;
+        return new Promise((resolve, reject) => {
+            const inputAudio = Ffmpeg(inputFilePath);
+            const outfile = inputFilePath + ".out." + toFormat;
 
-export default async (filePath) => {
-    const extname = path.extname(filePath).toLowerCase();
-    const stats = statSync(filePath);
+            inputAudio
+                .noVideo()
+                .audioCodec(audioCodec)
+                .audioBitrate(bitrate)
+                .toFormat(toFormat)
+                .output(outfile)
+                .outputOptions(["-map_metadata -1"])
+                .on("end", () => {
+                    logger.debug(
+                        `Ffmpeg Conversion finished with bitrate ${bitrate}k: ${outfile}`,
+                    );
+                    resolve(outfile);
+                })
+                .on("error", (err) => {
+                    reject(err);
+                })
+                .on("start", (commandLine) => {
+                    logger.debug("Spawned Ffmpeg with command: " + commandLine);
+                })
+                .run();
 
-    if (extname === ".mp3" && stats.size < MAX_ASSET_SIZE) {
-        logger.debug(`File is already mp3 and under size: ${filePath}`);
-        return filePath;
-    }
+            timer = setTimeout(
+                () => {
+                    reject(
+                        new Error(
+                            `Ffpmeg Conversion timed out for ${inputFilePath}`,
+                        ),
+                    );
+                },
+                this.ffmpeg_timeout * 60 * 1000,
+            );
+        }).finally(() => {
+            clearTimeout(timer);
+        });
+    };
+}
 
-    const tempFilePath = createTempFilePath(filePath);
-    // replace extension with .mp3
-    let desiredfilePath = filePath.slice(0, -extname.length) + ".mp3";
-    try {
-        return await resizeAndConvertToMP3(tempFilePath, desiredfilePath);
-    } catch (error) {
-        deleteFile(tempFilePath);
-        deleteFile(desiredfilePath);
-        throw error;
-    }
-};
+export default AudioConverter;

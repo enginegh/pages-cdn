@@ -36,7 +36,7 @@ export default class MongoQueue {
             },
             { sort: { _id: 1 }, returnDocument: "after" },
         );
-        if (doc) {
+        if (doc && !doc.redownload) {
             if (await this.storagedb.findOne({ spotify: doc.spotify })) {
                 logger.debug(
                     `Skipping ${doc._id} because it already exists in storage`,
@@ -52,11 +52,6 @@ export default class MongoQueue {
         // if locked_until is in the past, it's pending
         // if locked_until is in the future, it's locked
         // if not locked_until, it's pending
-        // const pending = await this.queuedb.countDocuments(this.pendingFilter);
-        // const locked = await this.queuedb.countDocuments({
-        //     locked_until: { $gt: new Date() },
-        // });
-        // const total = await this.queuedb.countDocuments();
 
         // using aggregation
 

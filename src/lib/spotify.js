@@ -3,6 +3,8 @@ import { existsSync, writeFileSync, readFileSync } from "fs";
 import ID3Writer from "./id3writer.js";
 import logger from "./logger.js";
 
+const DEFAULT_CACHE_PATH = ".spotify.cache";
+
 export default class Spotify {
     constructor(client_id, client_secret) {
         this.client_id = client_id;
@@ -13,8 +15,9 @@ export default class Spotify {
     }
 
     static getTokenFromCache = (cache_path) => {
-        if (existsSync(cache_path || ".cache.spotify")) {
-            const cache = JSON.parse(readFileSync(".cache.spotify"));
+        const cachePath = cache_path || DEFAULT_CACHE_PATH;
+        if (existsSync(cachePath)) {
+            const cache = JSON.parse(readFileSync(cachePath));
             if (cache.expires_on > Date.now()) {
                 return cache;
             }
@@ -30,7 +33,7 @@ export default class Spotify {
         this.session.defaults.headers.common[
             "Authorization"
         ] = `${this.token_type} ${this.access_token}`;
-        writeFileSync(".cache.spotify", JSON.stringify(token));
+        writeFileSync(DEFAULT_CACHE_PATH, JSON.stringify(token));
     };
 
     checkAndUpdateToken = async () => {
@@ -69,7 +72,11 @@ export default class Spotify {
             })
             .catch((error) => {
                 if (error.response) {
-                    throw error.response.data.message;
+                    throw new Error(
+                        `Spotify API Error: ${JSON.stringify(
+                            error.response.data,
+                        )}`,
+                    );
                 }
                 throw error.message;
             });

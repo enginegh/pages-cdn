@@ -121,9 +121,9 @@ async function main() {
 
     logger.info("Uploading files to cpages");
     const result = await cfetch.push(downloader.download_dir);
+    logger.info("Uploading complete");
     const baseUrl = result.url;
     logger.debug(`Manifest url: ${baseUrl}/manifest.json`);
-    logger.info("Uploading complete");
 
     for (const entry of manifest) {
         entry.url = baseUrl + entry.path;
@@ -135,7 +135,7 @@ async function main() {
     logger.debug("Storing complete");
 
     logger.debug("Removing download directory");
-    downloader.deleteDownloadDir();
+    downloader.clean();
 
     if (config.webhook) {
         logger.info("Sending webhook");

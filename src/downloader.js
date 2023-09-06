@@ -6,7 +6,9 @@ import { Youtube, YoutubeLite, YoutubeMusic } from "./providers/youtube.js";
 import ID3Writer from "./lib/id3writer.js";
 import path from "path";
 import { existsSync, mkdirSync, rmSync } from "fs";
-import mp3convert from "./lib/mp3convert/index.js";
+import AudioConverter from "./lib/mp3convert/index.js";
+
+const converter = new AudioConverter();
 
 export default class TrackDownloader {
     constructor(spotify, providers, download_dir) {
@@ -51,16 +53,16 @@ export default class TrackDownloader {
             );
         }
 
-        filePath = await mp3convert(filePath);
+        filePath = await converter.convert(filePath, "mp3");
 
         // write tags
         logger.debug("Writing tags...");
-        await ID3Writer.spotifyWrite(track, filePath);
+        await ID3Writer.nodeID3write(track, filePath);
         logger.info(`Downloaded ${track.name} - ${trackId}`);
         return { track, filePath };
     }
 
-    deleteDownloadDir = () => {
+    clean = () => {
         rmSync(this.download_dir, { recursive: true });
     };
 
