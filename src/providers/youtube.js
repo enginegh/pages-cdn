@@ -28,6 +28,10 @@ class YoutubeDownloader {
         const stream = ytdl.downloadFromInfo(musicInfo, { format: format });
         fileName = `${fileName}.${format.container}`;
         // write stream to file and block until finished
+        return await YoutubeDownloader.saveStream(stream, fileName);
+    }
+
+    static saveStream(stream, fileName) {
         return new Promise((resolve, reject) => {
             stream
                 .pipe(createWriteStream(fileName))
