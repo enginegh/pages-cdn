@@ -28,7 +28,7 @@ export default class TrackDownloader {
             path.join(
                 this.download_dir,
                 `${track.name} - ${track.artists[0].name}`.replace(
-                    /[/\\?%*:|"<>]/g,
+                    /[\/\\?%*:|"<>#]/g,
                     "-",
                 ),
             ),
