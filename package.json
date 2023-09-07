@@ -12,8 +12,8 @@
         "string-similarity": "^4.0.4",
         "winston": "^3.10.0",
         "youtube-music-api": "^1.0.6",
-        "youtube-search-api": "^1.2.1",
-        "ytdl-core": "github:viperadnan-git/node-ytdl-core"
+        "ytdl-core": "github:viperadnan-git/node-ytdl-core",
+        "ytsr": "^3.8.4"
     },
     "type": "module",
     "devDependencies": {

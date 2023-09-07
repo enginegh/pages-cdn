@@ -97,11 +97,20 @@ export default class Spotify {
             });
     }
 
-    async search(query) {
+    async search(query, limit = 50) {
         return this.fetch("/search", {
-            params: { q: query, type: "track" },
+            params: { q: query, type: "track", limit },
         }).then((response) => {
             return response.tracks.items;
+        });
+    }
+
+    async isrcSearch(isrc) {
+        return await this.search(`isrc:${isrc}`, 1).then((tracks) => {
+            if (tracks.length > 0) {
+                return tracks[0];
+            }
+            throw new Error(`invalid id`);
         });
     }
 

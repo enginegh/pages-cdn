@@ -43,9 +43,7 @@ async function main() {
         queue.add(async () => {
             let success = false;
             try {
-                const { track, filePath } = await downloader.download(
-                    doc.spotify,
-                );
+                const { track, filePath } = await downloader.download(doc);
                 // store track.uri, track.external_ids.isrc, and filePath without downloader.download_dir
                 // skip if locked_until is in the past
 

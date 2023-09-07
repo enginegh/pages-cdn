@@ -1,5 +1,5 @@
 import YoutubeMusicApi from "youtube-music-api";
-import { GetListByKeyword } from "youtube-search-api";
+import ytsr from "ytsr";
 import ytdl from "ytdl-core";
 import { createWriteStream } from "fs";
 import {
@@ -44,7 +44,8 @@ class YoutubeDownloader {
 export class Youtube extends YoutubeDownloader {
     static async search(track) {
         const query = getQueryFromMetadata(track);
-        const results = await GetListByKeyword(query, false, 1);
+        const filter = (await ytsr.getFilters(query)).get("Type").get("Video");
+        const results = await ytsr(filter.url, { limit: 1 });
         const video = results.items[0];
         if (!video) {
             logger.debug(`[Youtube] No results found for ${query}`);
@@ -100,7 +101,8 @@ export class YoutubeMusic {
 export class YoutubeLite extends YoutubeDownloader {
     static async search(track) {
         const query = getLiteQueryFromMetadata(track);
-        const results = await GetListByKeyword(query, false, 1);
+        const filter = (await ytsr.getFilters(query)).get("Type").get("Video");
+        const results = await ytsr(filter.url, { limit: 1 });
         const video = results.items[0];
         if (!video) {
             logger.debug(`[YoutubeLite] No results found for ${query}`);

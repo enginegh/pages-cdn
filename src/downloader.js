@@ -17,8 +17,17 @@ export default class TrackDownloader {
         this.download_dir = download_dir;
     }
 
-    async download(trackId) {
-        const track = await this.spotify.track(trackId);
+    async download({ spotify, isrc }) {
+        let id = spotify ?? isrc;
+
+        let track;
+        if (spotify) {
+            track = await this.spotify.track(spotify);
+        } else if (isrc) {
+            track = await this.spotify.isrcSearch(isrc);
+        } else {
+            throw new Error(`invalid id`);
+        }
 
         if (!track.name) {
             throw new Error(`invalid id`);
@@ -49,7 +58,7 @@ export default class TrackDownloader {
 
         if (!filePath) {
             throw new Error(
-                `[downloader] Track not found for ${track.name} - ${trackId}`,
+                `[downloader] Track not found for ${track.name} - ${id}`,
             );
         }
 
@@ -58,7 +67,7 @@ export default class TrackDownloader {
         // write tags
         logger.debug("Writing tags...");
         await ID3Writer.nodeID3write(track, filePath);
-        logger.info(`Downloaded ${track.name} - ${trackId}`);
+        logger.info(`Downloaded ${track.name} - ${id}`);
         return { track, filePath };
     }
 
