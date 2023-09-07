@@ -115,7 +115,7 @@ export default class DeezerDownloader {
         });
 
         logger.debug(
-            `Downloading ${track.SNG_TITLE} - ${track.ART_NAME} (${trackQuality})`,
+            `Deezer downloading: ${track.SNG_TITLE} - ${track.ART_NAME} (${trackQuality})`,
         );
 
         return await new Promise((resolve, reject) => {
@@ -123,7 +123,7 @@ export default class DeezerDownloader {
             this.decryptStream(response, key, stream);
             response.data.on("end", () => {
                 logger.debug(
-                    `Downloaded ${track.SNG_TITLE} - ${track.ART_NAME} (${trackQuality})`,
+                    `Deezer downloaded: ${track.SNG_TITLE} - ${track.ART_NAME} (${trackQuality})`,
                 );
                 resolve(output_file);
             });

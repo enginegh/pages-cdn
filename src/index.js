@@ -64,7 +64,10 @@ async function main() {
                     unlinkSync(filePath);
                 }
             } catch (error) {
-                if (error.message === "invalid id") {
+                if (
+                    error.message === "invalid id" ||
+                    error.message.startsWith("Non existing id")
+                ) {
                     logger.error(
                         `Skipping '${doc.spotify}' because it has an invalid id`,
                     );

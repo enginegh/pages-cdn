@@ -13,7 +13,7 @@
         "winston": "^3.10.0",
         "youtube-music-api": "^1.0.6",
         "youtube-search-api": "^1.2.1",
-        "ytdl-core": "github:eugabrielsilva/node-ytdl-core#f8b44b6727be87da46f6dbabc6f46e4efbd96436"
+        "ytdl-core": "github:viperadnan-git/node-ytdl-core"
     },
     "type": "module",
     "devDependencies": {
