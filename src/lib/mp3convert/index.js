@@ -75,6 +75,7 @@ class AudioConverter {
         const metadata = await videoMetadata(inputFilePath);
         // reject if duration is bigger than 34 minutes
         if (metadata.format.duration > this.max_duration) {
+            deleteFile(inputFilePath);
             throw new Error(
                 `File duration is too long: ${metadata.format.duration}, max duration ${this.max_duration}`,
             );
