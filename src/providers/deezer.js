@@ -156,7 +156,7 @@ export default class DeezerDownloader {
     search = async (inputTrack) => {
         if (inputTrack?.external_ids.isrc) {
             return await this.searchByISRC(inputTrack.external_ids.isrc);
-        };
+        }
 
         const query = getQueryFromMetadata(inputTrack);
         const response = await this.session.get(
@@ -183,13 +183,12 @@ export default class DeezerDownloader {
         return track.id;
     };
 
-
     searchByISRC = async (isrc) => {
         const track = await this.session
-        .get(`https://api.deezer.com/track/isrc:${isrc}`)
-        .then((response) => {
-            return response.data;
-        });
+            .get(`https://api.deezer.com/track/isrc:${isrc}`)
+            .then((response) => {
+                return response.data;
+            });
 
         if (track.error) {
             logger.debug(`[Deezer] No results found for ${isrc}`);
