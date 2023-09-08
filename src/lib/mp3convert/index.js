@@ -28,14 +28,19 @@ class AudioConverter {
 
     convert = async (inputFilePath, format) => {
         if (!this.check(inputFilePath, format)) {
-            const outfile = await this.resizeAndConvert(inputFilePath, format);
-            // change extension of inputFilePath to outfile extension
-            const newFilePath =
-                inputFilePath.slice(0, -path.extname(inputFilePath).length) +
-                path.extname(outfile);
-            deleteFile(inputFilePath);
-            renameSync(outfile, newFilePath);
-            return newFilePath;
+            try {
+                const outfile = await this.resizeAndConvert(inputFilePath, format);
+                // change extension of inputFilePath to outfile extension
+                const newFilePath =
+                    inputFilePath.slice(0, -path.extname(inputFilePath).length) +
+                    path.extname(outfile);
+                deleteFile(inputFilePath);
+                renameSync(outfile, newFilePath);
+                return newFilePath;
+            } catch (error) {
+                deleteFile(inputFilePath);
+                throw error;
+            };
         }
         return inputFilePath;
     };
@@ -75,7 +80,6 @@ class AudioConverter {
         const metadata = await videoMetadata(inputFilePath);
         // reject if duration is bigger than 34 minutes
         if (metadata.format.duration > this.max_duration) {
-            deleteFile(inputFilePath);
             throw new Error(
                 `File duration is too long: ${metadata.format.duration}, max duration ${this.max_duration}`,
             );
@@ -110,6 +114,7 @@ class AudioConverter {
                     resolve(outfile);
                 })
                 .on("error", (err) => {
+                    deleteFile(outfile);
                     reject(err);
                 })
                 .on("start", (commandLine) => {
@@ -119,7 +124,6 @@ class AudioConverter {
 
             timer = setTimeout(
                 () => {
-                    deleteFile(inputFilePath);
                     deleteFile(outfile);
                     reject(
                         new Error(
