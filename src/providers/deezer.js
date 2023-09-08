@@ -115,7 +115,7 @@ export default class DeezerDownloader {
         });
 
         logger.debug(
-            `Deezer downloading: ${track.SNG_TITLE} - ${track.ART_NAME} (${trackQuality})`,
+            `[Deezer] Downloading: ${track.SNG_TITLE} - ${track.ART_NAME} (${trackQuality})`,
         );
 
         return await new Promise((resolve, reject) => {
@@ -123,7 +123,7 @@ export default class DeezerDownloader {
             this.decryptStream(response, key, stream);
             response.data.on("end", () => {
                 logger.debug(
-                    `Deezer downloaded: ${track.SNG_TITLE} - ${track.ART_NAME} (${trackQuality})`,
+                    `[Deezer] Downloaded: ${track.SNG_TITLE} - ${track.ART_NAME} (${trackQuality})`,
                 );
                 resolve(output_file);
             });
@@ -137,17 +137,16 @@ export default class DeezerDownloader {
         return this.session
             .get(`https://www.deezer.com/en/track/${trackId}`)
             .then((response) => {
-                fs.writeFileSync("index.html", response.data);
                 const trackInfos = response.data.match(/{"DATA":({.+})}/gm);
 
                 if (!trackInfos) {
-                    throw new Error("Track not found");
+                    throw new Error("[Deezer] Track not found");
                 }
 
                 const trackInfo = JSON.parse(trackInfos[0])["DATA"];
 
                 if (!trackInfo.MD5_ORIGIN) {
-                    throw new Error("Login incorrect");
+                    throw new Error("[Deezer] Login incorrect");
                 }
 
                 return trackInfo;
@@ -155,6 +154,10 @@ export default class DeezerDownloader {
     };
 
     search = async (inputTrack) => {
+        if (inputTrack?.external_ids.isrc) {
+            return await this.searchByISRC(inputTrack.external_ids.isrc);
+        };
+
         const query = getQueryFromMetadata(inputTrack);
         const response = await this.session.get(
             `https://api.deezer.com/search?q=${query}`,
@@ -180,27 +183,20 @@ export default class DeezerDownloader {
         return track.id;
     };
 
-    downloadTrackById = async (trackId) => {
-        try {
-            const trackInfo = await this.getTrackInfo(trackId);
-            const outputFileName = `${trackInfo.ART_NAME} - ${trackInfo.SNG_TITLE}.mp3`;
-            await this.downloadTrack(trackInfo, outputFileName);
-        } catch (error) {
-            logger.error(error);
-        }
-    };
 
-    downloadTrackByISRC = async (isrc) => {
+    searchByISRC = async (isrc) => {
         const track = await this.session
-            .get(`https://api.deezer.com/track/isrc:${isrc}`)
-            .then((response) => {
-                return response.data;
-            });
+        .get(`https://api.deezer.com/track/isrc:${isrc}`)
+        .then((response) => {
+            return response.data;
+        });
+
         if (track.error) {
-            throw new Error(track.error.message);
+            logger.debug(`[Deezer] No results found for ${isrc}`);
+            return null;
         }
-        const trackInfo = await this.getTrackInfo(track.id);
-        const outputFileName = `${trackInfo.ART_NAME} - ${trackInfo.SNG_TITLE}.mp3`;
-        await this.downloadTrack(trackInfo, outputFileName);
+
+        await this.getTrackInfo(track.id);
+        return track.id;
     };
 }

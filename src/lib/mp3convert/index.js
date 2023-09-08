@@ -119,6 +119,8 @@ class AudioConverter {
 
             timer = setTimeout(
                 () => {
+                    deleteFile(inputFilePath);
+                    deleteFile(outfile);
                     reject(
                         new Error(
                             `Ffpmeg Conversion timed out for ${inputFilePath}`,
