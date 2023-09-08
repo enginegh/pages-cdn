@@ -65,7 +65,7 @@ export default class TrackDownloader {
         filePath = await converter.convert(filePath, "mp3");
 
         // write tags
-        logger.debug(`Writing tags for ${track.name}`);
+        logger.debug(`Writing tags: ${filePath}`);
         await ID3Writer.nodeID3write(track, filePath);
 
         logger.info(`Downloaded ${track.name} - ${id}`);
