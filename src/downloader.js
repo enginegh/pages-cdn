@@ -43,6 +43,8 @@ export default class TrackDownloader {
             ),
         );
 
+        logger.debug(`Downloading ${track.name} (${id})`);
+
         let filePath;
         for (const provider of this.providers) {
             try {
@@ -58,7 +60,7 @@ export default class TrackDownloader {
 
         if (!filePath) {
             throw new Error(
-                `[downloader] Track not found for ${track.name} - ${id}`,
+                `[downloader] Track not found for ${track.name} (${id})`,
             );
         }
 
@@ -68,7 +70,7 @@ export default class TrackDownloader {
         logger.debug(`Writing tags: ${filePath}`);
         await ID3Writer.nodeID3write(track, filePath);
 
-        logger.info(`Downloaded ${track.name} - ${id}`);
+        logger.info(`Downloaded ${track.name} (${id})`);
         return { track, filePath };
     }
 

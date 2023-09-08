@@ -29,18 +29,23 @@ class AudioConverter {
     convert = async (inputFilePath, format) => {
         if (!this.check(inputFilePath, format)) {
             try {
-                const outfile = await this.resizeAndConvert(inputFilePath, format);
+                const outfile = await this.resizeAndConvert(
+                    inputFilePath,
+                    format,
+                );
                 // change extension of inputFilePath to outfile extension
                 const newFilePath =
-                    inputFilePath.slice(0, -path.extname(inputFilePath).length) +
-                    path.extname(outfile);
+                    inputFilePath.slice(
+                        0,
+                        -path.extname(inputFilePath).length,
+                    ) + path.extname(outfile);
                 deleteFile(inputFilePath);
                 renameSync(outfile, newFilePath);
                 return newFilePath;
             } catch (error) {
                 deleteFile(inputFilePath);
                 throw error;
-            };
+            }
         }
         return inputFilePath;
     };
