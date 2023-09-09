@@ -105,8 +105,8 @@ export class YoutubeMusic {
 export class YoutubeLite extends YoutubeDownloader {
     static async search(track) {
         const query = getLiteQueryFromMetadata(track);
-        const results = await ytsr(query, { limit: 1 });
-        const video = results.items[0];
+        const results = await ytsr(query, { limit: 20 });
+        const video = results.items.find((item) => item.type === "video");
         if (!video) {
             logger.debug(`[YoutubeLite] No results found for ${query}`);
             return null;
