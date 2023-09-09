@@ -114,7 +114,7 @@ class AudioConverter {
                 .outputOptions(["-map_metadata -1"])
                 .on("end", () => {
                     logger.debug(
-                        `Ffmpeg Conversion finished with bitrate ${bitrate}k: ${outfile}`,
+                        `Ffmpeg conversion successful with bitrate ${bitrate}k: ${outfile}`,
                     );
                     resolve(outfile);
                 })
@@ -132,7 +132,7 @@ class AudioConverter {
                     deleteFile(outfile);
                     reject(
                         new Error(
-                            `Ffpmeg Conversion timed out for ${inputFilePath}`,
+                            `Ffpmeg conversion timed out for ${inputFilePath}`,
                         ),
                     );
                 },
