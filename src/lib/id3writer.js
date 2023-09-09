@@ -7,7 +7,8 @@ import { deleteFile } from "./utils.js";
 
 export default class ID3Writer {
     static async cretaeImage(track) {
-        const url = track.album.images.sort((a, b) => b.width - a.width)[0].url;
+        const images = track.album.images.sort((a, b) => b.width - a.width);
+        const url = images.length ? images[0].url : "https://placehold.co/400/333/FFF.jpg?font=montserrat&text=" + encodeURIComponent(track.name);
         const response = await axios.get(url, { responseType: "arraybuffer" });
         return {
             mime: "image/jpeg",
