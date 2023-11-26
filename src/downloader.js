@@ -7,6 +7,7 @@ import ID3Writer from "./lib/id3writer.js";
 import path from "path";
 import { existsSync, mkdirSync, rmSync } from "fs";
 import AudioConverter from "./lib/mp3convert/index.js";
+import { SongWhip } from "./providers/songwhip.js";
 
 const converter = new AudioConverter();
 
@@ -49,10 +50,8 @@ export default class TrackDownloader {
         for (const provider of this.providers) {
             try {
                 const result = await provider.search(track);
-                if (result) {
-                    filePath = await provider.downloadTrack(result, fileName);
-                    break;
-                }
+                filePath = await provider.downloadTrack(result, fileName);
+                break;
             } catch (error) {
                 logger.debug(error);
             }
@@ -95,7 +94,7 @@ export default class TrackDownloader {
         }
         mkdirSync(downloadDir);
 
-        const providers = [ytmusic, deezer, Youtube, YoutubeLite];
+        const providers = [SongWhip, ytmusic, deezer, Youtube, YoutubeLite];
         return new TrackDownloader(spotify, providers, downloadDir);
     };
 }

@@ -2,3 +2,5 @@ node_modules/
 tests/
 *.cache
 *.toml
+bun.lockb
+logs.txt

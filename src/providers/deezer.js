@@ -96,8 +96,8 @@ export default class DeezerDownloader {
             track.FILESIZE_MP3_320 !== "0"
                 ? 3
                 : track.FILESIZE_MP3_256 !== "0"
-                ? 5
-                : 1;
+                  ? 5
+                  : 1;
         const urlkey = this.getDownloadURL(
             track.SNG_ID,
             track.MD5_ORIGIN,
@@ -164,8 +164,7 @@ export default class DeezerDownloader {
         );
         const tracks = response.data.data;
         if (!tracks.length) {
-            logger.debug(`[Deezer] No results found for ${query}`);
-            return null;
+            throw new Error(`[Deezer] No results found for ${query}`);
         }
 
         const track = tracks[0];
@@ -176,8 +175,7 @@ export default class DeezerDownloader {
         );
 
         if (score < 0.7) {
-            logger.debug(`[Deezer] No matching results found for ${query}`);
-            return null;
+            throw new Error(`[Deezer] No matching results found for ${query}`);
         }
 
         return track.id;
@@ -191,8 +189,7 @@ export default class DeezerDownloader {
             });
 
         if (track.error) {
-            logger.debug(`[Deezer] No results found for ${isrc}`);
-            return null;
+            throw new Error(`[Deezer] No results found for ${isrc}`);
         }
 
         await this.getTrackInfo(track.id);

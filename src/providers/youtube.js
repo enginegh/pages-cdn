@@ -6,22 +6,18 @@ import {
     getLiteQueryFromMetadata,
     getQueryFromMetadata,
 } from "../lib/query.js";
-import logger from "../lib/logger.js";
 import config from "../lib/config.js";
 import { compareTwoStrings } from "string-similarity";
 
-class YoutubeDownloader {
-    static async downloadTrack(id, fileName) {
-        const musicInfo = await ytdl.getInfo(
-            `https://youtube.com/watch?v=${id}`,
-            {
-                requestOptions: {
-                    headers: {
-                        cookie: config?.youtube?.cookies || "",
-                    },
+export class YoutubeDownloader {
+    static async downloadTrack(url, fileName) {
+        const musicInfo = await ytdl.getInfo(url, {
+            requestOptions: {
+                headers: {
+                    cookie: config?.youtube?.cookies || "",
                 },
             },
-        );
+        });
         const format = ytdl.chooseFormat(musicInfo.formats, {
             quality: "highestaudio",
         });
@@ -52,11 +48,23 @@ export class Youtube extends YoutubeDownloader {
         const results = await ytsr(filter.url, { limit: 1 });
         const video = results.items[0];
         if (!video) {
-            logger.debug(`[Youtube] No results found for ${query}`);
-            return null;
+            throw new Error(`[Youtube] No results found for ${query}`);
         }
 
-        return video.id;
+        return `https://youtube.com/watch?v=${video.id}`;
+    }
+}
+
+export class YoutubeLite extends YoutubeDownloader {
+    static async search(track) {
+        const query = getLiteQueryFromMetadata(track);
+        const results = await ytsr(query, { limit: 20 });
+        const video = results.items.find((item) => item.type === "video");
+        if (!video) {
+            throw new Error(`[YoutubeLite] No results found for ${query}`);
+        }
+
+        return `https://youtube.com/watch?v=${video.id}`;
     }
 }
 
@@ -78,8 +86,7 @@ export class YoutubeMusic {
         const songs = await this.api.search(query, "song");
         const song = songs.content[0];
         if (!song) {
-            logger.debug(`[yt-music] No results found for ${query}`);
-            return null;
+            throw new Error(`[yt-music] No results found for ${query}`);
         }
 
         const songName = song.name
@@ -94,24 +101,11 @@ export class YoutubeMusic {
             .trim();
         const score = compareTwoStrings(songName, trackName);
         if (score < 0.7) {
-            logger.debug(`[yt-music] No matching results found for ${query}`);
-            return null;
+            throw new Error(
+                `[yt-music] No matching results found for ${query}`,
+            );
         }
 
-        return song.videoId;
-    }
-}
-
-export class YoutubeLite extends YoutubeDownloader {
-    static async search(track) {
-        const query = getLiteQueryFromMetadata(track);
-        const results = await ytsr(query, { limit: 20 });
-        const video = results.items.find((item) => item.type === "video");
-        if (!video) {
-            logger.debug(`[YoutubeLite] No results found for ${query}`);
-            return null;
-        }
-
-        return video.id;
+        return `https://music.youtube.com/watch?v=${song.videoId}`;
     }
 }

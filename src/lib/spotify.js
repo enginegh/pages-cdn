@@ -30,9 +30,8 @@ export default class Spotify {
         this.access_token = token.access_token;
         this.token_type = token.token_type;
         this.token_expires_on = token.expires_on;
-        this.session.defaults.headers.common[
-            "Authorization"
-        ] = `${this.token_type} ${this.access_token}`;
+        this.session.defaults.headers.common["Authorization"] =
+            `${this.token_type} ${this.access_token}`;
         writeFileSync(DEFAULT_CACHE_PATH, JSON.stringify(token));
     };
 

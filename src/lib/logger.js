@@ -24,7 +24,23 @@ const logger = createLogger({
             return `${info.level}: ${info.message}`;
         }),
     ),
-    transports: [new transports.Console()],
+    transports: [
+        new transports.Console(),
+        // log to file without coloring
+        new transports.File({
+            filename: "logs.txt",
+            format: format.combine(
+                format((info) => {
+                    info.level = info.level.toUpperCase();
+                    return info;
+                })(),
+                format.simple(),
+                format.printf((info) => {
+                    return `${info.level}: ${info.message}`;
+                }),
+            ),
+        }),
+    ],
 });
 
 export default logger;
