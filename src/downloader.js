@@ -94,7 +94,7 @@ export default class TrackDownloader {
         }
         mkdirSync(downloadDir);
 
-        const providers = [SongWhip, ytmusic, deezer, Youtube, YoutubeLite];
+        const providers = [ytmusic, deezer, Youtube, YoutubeLite];
         return new TrackDownloader(spotify, providers, downloadDir);
     };
 }
