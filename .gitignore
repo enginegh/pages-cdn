@@ -4,3 +4,4 @@ tests/
 *.toml
 bun.lockb
 logs.txt
+test.js

@@ -1,17 +1,24 @@
+import PQueue from "p-queue";
 import logger from "../lib/logger.js";
 import { YoutubeDownloader } from "./youtube.js";
 import axios from "axios";
 
+export const concurrency = new PQueue({ concurrency: 1 }, { autoStart: true });
+
 export class SongWhip extends YoutubeDownloader {
     static async search(track) {
         const spotifyUrl = `https://open.spotify.com/track/${track.id}`;
-        const response = await axios.post(
+
+        const response = await concurrency.add(axios.post(
             "https://songwhip.com/api/songwhip/create",
             {
                 country: "N/A",
                 url: spotifyUrl,
             },
-        );
+            {
+                timeout: 10000, // 10 seconds
+            }
+        ));
 
         if (!response.status === 200) {
             throw new Error(
@@ -22,8 +29,7 @@ export class SongWhip extends YoutubeDownloader {
         const links = response.data.data.item.links;
 
         logger.debug(
-            `[Songwhip] Found ${
-                links.youtubeMusic ? "Youtube Music" : "Youtube"
+            `[Songwhip] Found ${links.youtubeMusic ? "Youtube Music" : "Youtube"
             } link for ${track.name} (${track.id})`,
         );
         if (links.youtubeMusic) {

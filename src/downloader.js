@@ -8,6 +8,7 @@ import path from "path";
 import { existsSync, mkdirSync, rmSync } from "fs";
 import AudioConverter from "./lib/mp3convert/index.js";
 import { SongWhip } from "./providers/songwhip.js";
+import Odesli from "./providers/odesli.js";
 
 const converter = new AudioConverter();
 
@@ -94,7 +95,7 @@ export default class TrackDownloader {
         }
         mkdirSync(downloadDir);
 
-        const providers = [ytmusic, deezer, Youtube, YoutubeLite];
+        const providers = [Odesli, ytmusic, deezer, Youtube, YoutubeLite];
         return new TrackDownloader(spotify, providers, downloadDir);
     };
 }
