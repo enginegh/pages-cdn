@@ -1,5 +1,6 @@
 import axios from "axios";
 import { YoutubeDownloader } from "./youtube.js";
+import logger from "../lib/logger.js";
 
 const DATA_SEARCH_REGEX = new RegExp(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*)/gm);
 
@@ -22,8 +23,14 @@ class Odesli extends YoutubeDownloader {
         const youtubeMusic = DATA.find(provider => provider.startsWith("https://music.youtube.com"));
 
         if (youtubeMusic) {
+            logger.debug(
+                `[Odesli] Found Youtube Music link for ${track.name} (${track.id})`,
+            );
             return youtubeMusic;
         } else if (youtube) {
+            logger.debug(
+                `[Odesli] Found Youtube link for ${track.name} (${track.id})`,
+            );
             return youtube;
         } else {
             throw new Error(
