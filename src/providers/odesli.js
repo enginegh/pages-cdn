@@ -6,10 +6,7 @@ const DATA_SEARCH_REGEX = new RegExp(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{
 
 class Odesli extends YoutubeDownloader {
     static async search(track) {
-        const spotifyUrl = `https://open.spotify.com/track/${track.id}`;
-        let response = await axios.get(`https://api.odesli.co/resolve?url=${spotifyUrl}`);
-
-        response = await axios.get(`https://song.link/s/${response.data.id}`);
+        const response = await axios.get(`https://song.link/s/${track.id}`);
 
         const DATA = response.data.match(DATA_SEARCH_REGEX);
 
@@ -19,8 +16,8 @@ class Odesli extends YoutubeDownloader {
             );
         }
         
-        const youtube = DATA.find(provider => provider.startsWith("https://youtube.com"));
-        const youtubeMusic = DATA.find(provider => provider.startsWith("https://music.youtube.com"));
+        const youtube = DATA.find(provider => provider.startsWith("https://www.youtube.com/"));
+        const youtubeMusic = DATA.find(provider => provider.startsWith("https://music.youtube.com/"));
 
         if (youtubeMusic) {
             logger.debug(
