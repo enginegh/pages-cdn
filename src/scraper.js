@@ -19,9 +19,7 @@ class MySpotify extends Spotify {
     }
 
     fetchArtistAlbums = async (artist) => {
-        const artistAlbums = await this.artistAllAlbums(artist.id);
-        // console.log(`Found ${artistAlbums.length} albums for ${artist.name}`);
-        return artistAlbums;
+        return await this.artistAllAlbums(artist.id);
     }
 
     fetchAlbumsForTrack = async (track) => {
@@ -31,6 +29,7 @@ class MySpotify extends Spotify {
             for (const album of artistAlbums) {
                 albums.add(album.id);
             }
+            await sleep(3);
         }
 
         return Array.from(albums);
@@ -121,7 +120,7 @@ const scrape = async (playlistId) => {
 if (argv.list) {
     const json = {};
     json.playlists = readFileSync("playlists.txt").toString().split("\n");
-    console.log(`::set-output name=matrix::${JSON.stringify(json)}`);
+    console.log(`matrix=${JSON.stringify(json)}`);
 } else if (argv.id) {
     await scrape(argv.id);
 } else {
