@@ -118,7 +118,7 @@ const scrape = async (playlistId) => {
 
 if (argv.list) {
     const json = {};
-    json.playlists = readFileSync("playlists.txt").toString().split("\n");
+    json.playlists = Array.from(new Set(readFileSync("playlists.txt").toString().split("\n")));
     console.log(`matrix=${JSON.stringify(json)}`);
 } else if (argv.id) {
     await scrape(argv.id);
