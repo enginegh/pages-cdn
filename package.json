@@ -27,6 +27,7 @@
     "scripts": {
         "test": "node src",
         "start": "node src",
+        "scrape": "node src/scraper",
         "pretty": "npx prettier --write . --ignore-path .gitignore"
     },
     "author": "",

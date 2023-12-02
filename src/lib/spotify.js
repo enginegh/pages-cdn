@@ -1,6 +1,5 @@
 import axios from "axios";
 import { existsSync, writeFileSync, readFileSync } from "fs";
-import ID3Writer from "./id3writer.js";
 import logger from "./logger.js";
 
 const DEFAULT_CACHE_PATH = ".spotify.cache";
