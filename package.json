@@ -5,6 +5,7 @@
         "browser-id3-writer": "^6.0.0",
         "fluent-ffmpeg": "^2.1.2",
         "mime": "^3.0.0",
+        "minimist": "^1.2.8",
         "mongodb": "^6.0.0",
         "node-id3": "^0.2.6",
         "p-queue": "^7.3.4",

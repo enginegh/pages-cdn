@@ -145,6 +145,29 @@ export default class Spotify {
         });
     }
 
+    async artistAlbums(id, offset = 0, limit = 50) {
+        return this.fetch(`/artists/${id}/albums`, {
+            params: { offset, limit },
+        }).then((response) => {
+            return response;
+        });
+    }
+
+    async artistAllAlbums(id) {
+        let albums = [];
+        let offset = 0;
+        let limit = 50;
+        let response = null;
+        // use the response.next to get all albums
+        do {
+            response = await this.artistAlbums(id, offset, limit);
+            albums.push(...response.items);
+            offset += limit;
+        } while (response.next);
+
+        return albums;
+    }
+
     async getRecommendations({
         seed_tracks,
         seed_artists,
