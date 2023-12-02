@@ -110,10 +110,9 @@ const scrape = async (playlistId) => {
             } else console.error(error);
         }
 
-        await sleep(5);
+        await sleep(1);
     }
 
-    await sleep(10);
     await mongo.close();
 };
 
