@@ -89,10 +89,24 @@ export default class Spotify {
                 return response.data;
             })
             .catch((error) => {
-                if (error.response.data?.error?.message) {
-                    throw new Error(error.response.data.error.message);
+                if (error.response) {
+                    if (error.response.status === 429) {
+                        const retryAfter = error.response.headers['retry-after'];
+                        if (retryAfter) {
+                            const retryAfterSeconds = parseInt(retryAfter, 10) + 2;
+                            return new Promise((resolve) => {
+                                setTimeout(resolve, retryAfterSeconds * 1000);
+                            }).then(() => this.fetch(path, params));
+                        }
+                    } else
+                        if (error.response.data?.error?.message) {
+                            throw new Error(error.response.data.error.message);
+                        } else {
+                            throw new Error(error.response.data);
+                        }
+                } else {
+                    throw new Error(error.message);
                 }
-                throw new Error(error.message);
             });
     }
 
