@@ -120,7 +120,7 @@ const scrape = async (playlistId) => {
 
 if (argv.list) {
     const json = {};
-    json.playlists = readFileSync("tests/playlists.txt").toString().split("\n");
+    json.playlists = readFileSync("playlists.txt").toString().split("\n");
     console.log(`::set-output name=matrix::${JSON.stringify(json)}`);
 } else if (argv.id) {
     await scrape(argv.id);
