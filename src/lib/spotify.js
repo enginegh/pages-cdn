@@ -94,6 +94,7 @@ export default class Spotify {
                         const retryAfter = error.response.headers['retry-after'];
                         if (retryAfter) {
                             const retryAfterSeconds = parseInt(retryAfter, 10) + 2;
+                            logger.info(`Spotify API rate limit exceeded. Retrying after ${retryAfterSeconds} seconds`);
                             return new Promise((resolve) => {
                                 setTimeout(resolve, retryAfterSeconds * 1000);
                             }).then(() => this.fetch(path, params));
