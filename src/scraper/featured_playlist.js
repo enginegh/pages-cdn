@@ -3,7 +3,7 @@ import { sleep } from "./utils.js";
 export const addPlaylist = async (spotify, queue, playlist) => {
     const tracks = await spotify.fetchTracksFromPlaylist(playlist.id);
 
-    const tasks = tracks.map((track) => {
+    const tasks = tracks.filter((track) => track && track.id).map((track) => {
         return { spotify: track.id };
     });
 
