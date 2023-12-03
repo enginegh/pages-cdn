@@ -53,7 +53,7 @@ export default class Cfetch {
     };
 
     fetchResult = async (path, params) => {
-        logger.debug(`${params?.method || "GET"} ${path}`);
+        logger.verbose(`${params?.method || "GET"} ${path}`);
         const response = await this.session(path, params).catch(
             this.errorHandling,
         );

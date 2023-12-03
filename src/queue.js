@@ -36,16 +36,19 @@ export default class MongoQueue {
             },
             { sort: { _id: 1 }, returnDocument: "after" },
         );
+
+        if (!doc.spotify && !doc.isrc) {
+            logger.warn(`Invalid doc: ${JSON.stringify(doc)}`);
+            return this.deleteAndNext(doc._id);
+        } 
+
         if (doc && !doc.redownload) {
             const query = {};
-            
+
             if (doc.spotify) {
                 query.spotify = doc.spotify;
             } else if (doc.isrc) {
                 query.isrc = doc.isrc;
-            } else {
-                logger.warn(`Invalid doc: ${JSON.stringify(doc)}`);
-                return this.deleteAndNext(doc._id);
             }
 
             const existing = await this.storagedb.findOne(query);

@@ -89,7 +89,7 @@ export default class ScraperSpotify extends Spotify {
             response = await this.fetch(`/browse/categories/${category}/playlists`, {
                 params: { offset, limit, country: country },
             });
-            response.playlists.items.forEach((item) => playlists.add(item));
+            response.playlists.items.forEach((item) => item && playlists.add(item));
             offset += limit;
         } while (response.playlists.next);
 
