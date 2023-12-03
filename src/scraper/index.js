@@ -5,6 +5,7 @@ import config from "../lib/config.js";
 import FeaturedPlaylistsScraper from "./featured_playlist.js";
 import CategoriesScraper from "./categories.js";
 import ArtistsScraper from "./artists.js";
+import RecommendationsScraper from "./recommendations.js";
 
 const argv = minimist(process.argv.slice(2));
 
@@ -32,6 +33,8 @@ async function main() {
         await runScraper(CategoriesScraper);
     } else if (argv._[0] === "artists") {
         await runScraper(ArtistsScraper);
+    } else if (argv._[0] === "recommendations") {
+        await runScraper(RecommendationsScraper);
     }
 }
 

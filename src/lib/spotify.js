@@ -1,6 +1,7 @@
 import axios from "axios";
 import { existsSync, writeFileSync, readFileSync } from "fs";
 import logger from "./logger.js";
+import * as rax from 'retry-axios';
 
 const DEFAULT_CACHE_PATH = ".spotify.cache";
 
@@ -11,6 +12,13 @@ export default class Spotify {
         this.session = axios.create({
             baseURL: "https://api.spotify.com/v1",
         });
+        this.session.defaults.raxConfig = {
+            instance: this.session,
+            retry: 3,
+            retryDelay: 1000,
+            statusCodesToRetry: [[100, 199], [400, 400], [500, 599]],
+        };
+        rax.attach(this.session);
     }
 
     static getTokenFromCache = (cache_path) => {
@@ -199,12 +207,12 @@ export default class Spotify {
         return albums;
     }
 
-    async getRecommendations({
+    async fetchRecommendations({
         seed_tracks,
         seed_artists,
         seed_genres,
         market = "IN",
-        limit = 20,
+        limit = 100,
     }) {
         return this.fetch("/recommendations", {
             params: {
