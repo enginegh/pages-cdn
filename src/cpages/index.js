@@ -49,11 +49,10 @@ export default class Cfetch {
             // Something happened in setting up the request that triggered an Error
             logger.error(`Error ${error.message}`);
         }
-        // console.log(error.config);
     };
 
     fetchResult = async (path, params) => {
-        logger.verbose(`${params?.method || "GET"} ${path}`);
+        // logger.debug(`${params?.method || "GET"} ${path}`);
         const response = await this.session(path, params).catch(
             this.errorHandling,
         );
