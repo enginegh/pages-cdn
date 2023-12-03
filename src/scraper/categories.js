@@ -11,7 +11,7 @@ export default async function CategoriesScraper (spotify, queue) {
 
         for (const playlist of playlists) {
             await addPlaylist(spotify, queue, playlist);
-            await sleep(3);
+            await sleep(1);
         }
 
         console.log(`Scraping completed for Category: ${category.name}, Playlist: ${playlists.length}`);

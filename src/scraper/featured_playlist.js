@@ -14,9 +14,8 @@ export const addPlaylist = async (spotify, queue, playlist) => {
         );
     } catch (error) {
         if (error.code === 11000) {
-            const duplicateCount = error.result.result.writeErrors.length;
             console.log(
-                `[${tasks.length}]\tPlaylist: ${playlist.name} \t-> Found ${duplicateCount} duplicates, Inserted ${error.insertedCount} tracks`,
+                `[${tasks.length}]\tPlaylist: ${playlist.name} \t-> Inserted ${error.insertedCount} tracks`,
             );
         } else console.error(error);
     };

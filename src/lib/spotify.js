@@ -153,6 +153,23 @@ export default class Spotify {
         });
     }
 
+    async albumTracks(id) {
+        let tracks = [];
+        let response = null;
+        let offset = 0;
+        let limit = 50;
+
+        do {
+            response = await this.fetch(`/albums/${id}/tracks`, {
+                params: { offset, limit },
+            });
+            tracks.push(...response.items);
+            offset += limit;
+        } while (response.next);
+
+        return tracks;
+    }
+
     async artist(id) {
         return this.fetch(`/artists/${id}`).then((response) => {
             return response;
@@ -172,7 +189,7 @@ export default class Spotify {
         let offset = 0;
         let limit = 50;
         let response = null;
-        // use the response.next to get all albums
+
         do {
             response = await this.artistAlbums(id, offset, limit);
             albums.push(...response.items);
