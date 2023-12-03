@@ -37,20 +37,33 @@ export default class MongoQueue {
             { sort: { _id: 1 }, returnDocument: "after" },
         );
         if (doc && !doc.redownload) {
-            const existing = await this.storagedb.findOne({
-                $or: [{ spotify: doc.spotify }, { isrc: doc.isrc }],
-            });
+            const query = {};
+            
+            if (doc.spotify) {
+                query.spotify = doc.spotify;
+            } else if (doc.isrc) {
+                query.isrc = doc.isrc;
+            } else {
+                logger.warn(`Invalid doc: ${JSON.stringify(doc)}`);
+                return this.deleteAndNext(doc._id);
+            }
+
+            const existing = await this.storagedb.findOne(query);
             if (existing) {
                 logger.debug(
                     `Skipping ${
                         doc.spotify ?? doc.isrc
                     } because it already exists in storage`,
                 );
-                await this.queuedb.deleteOne({ _id: doc._id });
-                return this.next();
-            }
+                return this.deleteAndNext(doc._id);
+            };
         }
         return doc;
+    };
+
+    deleteAndNext = async (id) => {
+        await this.queuedb.deleteOne({ _id: id });
+        return this.next();
     };
 
     stats = async () => {
