@@ -89,7 +89,7 @@ export default class DeezerDownloader {
         });
     };
 
-    downloadTrack = async (trackId, output_file) => {
+    download = async (trackId, output_file) => {
         const track = await this.getTrackInfo(trackId);
 
         const trackQuality =

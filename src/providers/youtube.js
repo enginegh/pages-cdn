@@ -10,33 +10,26 @@ import config from "../lib/config.js";
 import { compareTwoStrings } from "string-similarity";
 
 export class YoutubeDownloader {
-    static async downloadTrack(url, fileName) {
-        const musicInfo = await ytdl.getInfo(url, {
+    static async download(url, fileName) {
+        const { formats } = await ytdl.getInfo(url, {
             requestOptions: {
                 headers: {
                     cookie: config?.youtube?.cookies || "",
                 },
             },
         });
-        const format = ytdl.chooseFormat(musicInfo.formats, {
-            quality: "highestaudio",
-        });
-        const stream = ytdl.downloadFromInfo(musicInfo, { format: format });
+        const format = ytdl.chooseFormat(formats, { quality: "highestaudio" });
+        const stream = ytdl.downloadFromInfo({ formats }, { format });
         fileName = `${fileName}.${format.container}`;
-        // write stream to file and block until finished
-        return await YoutubeDownloader.saveStream(stream, fileName);
+        return YoutubeDownloader.saveStream(stream, fileName);
     }
 
     static saveStream(stream, fileName) {
         return new Promise((resolve, reject) => {
             stream
                 .pipe(createWriteStream(fileName))
-                .on("finish", () => {
-                    resolve(fileName);
-                })
-                .on("error", (error) => {
-                    reject(error);
-                });
+                .on("finish", () => resolve(fileName))
+                .on("error", reject);
         });
     }
 }
@@ -79,7 +72,7 @@ export class YoutubeMusic {
         return yt;
     }
 
-    downloadTrack = YoutubeDownloader.downloadTrack;
+    download = YoutubeDownloader.download;
 
     async search(track) {
         const query = getQueryFromMetadata(track);

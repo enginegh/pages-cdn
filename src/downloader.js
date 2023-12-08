@@ -35,7 +35,7 @@ export default class TrackDownloader {
             throw new Error(`invalid id`);
         }
 
-        const fileName = path.resolve(
+        const basename = path.resolve(
             path.join(
                 this.download_dir,
                 `${track.name} - ${track.artists[0].name}`.replace(
@@ -45,13 +45,13 @@ export default class TrackDownloader {
             ),
         );
 
-        logger.debug(`Downloading ${track.name} (${id})`);
-
+        
         let filePath;
         for (const provider of this.providers) {
             try {
                 const result = await provider.search(track);
-                filePath = await provider.downloadTrack(result, fileName);
+                logger.debug(`Downloading ${result} for ${track.name} (${id})`);
+                filePath = await provider.download(result, basename);
                 break;
             } catch (error) {
                 logger.debug(error);
