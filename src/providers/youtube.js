@@ -41,7 +41,7 @@ export class Youtube extends YoutubeDownloader {
         const query = getQueryFromMetadata(track);
         const filter = (await ytsr.getFilters(query)).get("Type").get("Video");
         const results = await ytsr(filter.url, { limit: 10 });
-        const video = results.items.filter((item) => item.isLive === false)[0];
+        const video = results.items.filter((item) => item.duration)[0];
         if (!video) {
             throw new Error(`[Youtube] No results found for ${query}`);
         }
@@ -55,7 +55,7 @@ export class YoutubeLite extends YoutubeDownloader {
         const query = getLiteQueryFromMetadata(track);
         const results = await ytsr(query, { limit: 20 });
         const video = results.items
-            .filter((item) => item.isLive === false)
+            .filter((item) => item.duration)
             .find((item) => item.type === "video");
         if (!video) {
             throw new Error(`[YoutubeLite] No results found for ${query}`);
