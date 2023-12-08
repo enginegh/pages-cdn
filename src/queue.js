@@ -37,28 +37,29 @@ export default class MongoQueue {
             { sort: { _id: 1 }, returnDocument: "after" },
         );
 
-        if (!doc.spotify && !doc.isrc) {
-            logger.warn(`Invalid doc: ${JSON.stringify(doc)}`);
-            return this.deleteAndNext(doc._id);
-        }
-
-        if (doc && !doc.redownload) {
-            const query = {};
-
-            if (doc.spotify) {
-                query.spotify = doc.spotify;
-            } else if (doc.isrc) {
-                query.isrc = doc.isrc;
+        if (doc) {
+            if (!doc.spotify && !doc.isrc) {
+                logger.warn(`Invalid doc: ${JSON.stringify(doc)}`);
+                return this.deleteAndNext(doc._id);
             }
 
-            const existing = await this.storagedb.findOne(query);
-            if (existing) {
-                logger.debug(
-                    `Skipping ${
-                        doc.spotify ?? doc.isrc
-                    } because it already exists in storage`,
-                );
-                return this.deleteAndNext(doc._id);
+            if (!doc.redownload) {
+                const query = {};
+
+                if (doc.spotify) {
+                    query.spotify = doc.spotify;
+                } else if (doc.isrc) {
+                    query.isrc = doc.isrc;
+                }
+
+                const existing = await this.storagedb.findOne(query);
+                if (existing) {
+                    logger.debug(
+                        `Skipping ${doc.spotify ?? doc.isrc
+                        } because it already exists in storage`,
+                    );
+                    return this.deleteAndNext(doc._id);
+                }
             }
         }
         return doc;
