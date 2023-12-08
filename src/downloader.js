@@ -1,13 +1,12 @@
-// a function which takes a spotify uri and download the track and return track info and path, if failed return null
 import logger from "./lib/logger.js";
 import Spotify from "./lib/spotify.js";
 import DeezerDownloader from "./providers/deezer.js";
 import { Youtube, YoutubeLite, YoutubeMusic } from "./providers/youtube.js";
 import ID3Writer from "./lib/id3writer.js";
 import path from "path";
-import { existsSync, mkdirSync, rmSync } from "fs";
+import { existsSync, rmSync } from "fs";
 import AudioConverter from "./lib/mp3convert/index.js";
-import { SongWhip } from "./providers/songwhip.js";
+import { sanitizePath, ensureDirectoryExists } from "./lib/utils.js";
 import Odesli from "./providers/odesli.js";
 
 const converter = new AudioConverter();
@@ -28,27 +27,22 @@ export default class TrackDownloader {
         } else if (isrc) {
             track = await this.spotify.isrcSearch(isrc);
         } else {
-            throw new Error(`invalid id`);
+            throw new Error(`Invalid id: ${id}`);
         }
 
         if (!track.name) {
-            throw new Error(`invalid id`);
+            throw new Error(`Invalid track name for id: ${id}`);
         }
 
         const basedir = path.resolve(
-            path.join(this.download_dir, id.replace(/[\/\\?%*:|"<>#]/g, "-")),
+            path.join(this.download_dir, sanitizePath(id)),
         );
 
-        if (!existsSync(basedir)) {
-            mkdirSync(basedir, { recursive: true });
-        }
+        ensureDirectoryExists(basedir);
 
         const basename = path.join(
             basedir,
-            `${track.name} - ${track.artists[0].name}`.replace(
-                /[\/\\?%*:|"<>#]/g,
-                "-",
-            ),
+            sanitizePath(`${track.name} - ${track.artists[0].name}`),
         );
 
         let filePath;
@@ -59,7 +53,7 @@ export default class TrackDownloader {
                 filePath = await provider.download(result, basename);
                 break;
             } catch (error) {
-                logger.debug(error);
+                logger.debug(`Error downloading track: ${error}`);
             }
         }
 
@@ -71,7 +65,6 @@ export default class TrackDownloader {
 
         filePath = await converter.convert(filePath, "mp3");
 
-        // write tags
         logger.debug(`Writing tags: ${filePath}`);
         await ID3Writer.nodeID3write(track, filePath);
 
@@ -94,13 +87,13 @@ export default class TrackDownloader {
         );
         const ytmusic = await YoutubeMusic.initialize();
 
-        let downloadDir = path.resolve(config.download_dir || "./tracks");
-        if (existsSync(downloadDir)) {
-            rmSync(downloadDir, { recursive: true });
+        const download_dir = path.resolve(config.download_dir || "./tracks");
+        if (existsSync(download_dir)) {
+            rmSync(download_dir, { recursive: true });
         }
-        mkdirSync(downloadDir);
+        ensureDirectoryExists(download_dir);
 
         const providers = [Odesli, ytmusic, deezer, Youtube, YoutubeLite];
-        return new TrackDownloader(spotify, providers, downloadDir);
+        return new TrackDownloader(spotify, providers, download_dir);
     };
 }

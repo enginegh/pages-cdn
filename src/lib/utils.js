@@ -1,4 +1,4 @@
-import { unlinkSync } from "fs";
+import { unlinkSync, existsSync, mkdirSync } from "fs";
 
 /**
  * Deletes a file from the file system.
@@ -15,3 +15,23 @@ export const deleteFile = (filePath) => {
         }
     }
 };
+
+
+/**
+ * Sanitizes a path by replacing special characters with hyphens.
+ * @param {string} path - The path to sanitize.
+ * @returns {string} - The sanitized path.
+ */
+export const sanitizePath = (path) => {
+    return path.replace(/[\/\\?%*:|"<>#]/g, "-");
+}
+
+/**
+ * Ensures that a directory exists. If the directory does not exist, it will be created recursively.
+ * @param {string} directory - The directory path.
+ */
+export const ensureDirectoryExists = (directory) => {
+    if (!existsSync(directory)) {
+        mkdirSync(directory, { recursive: true });
+    }
+}

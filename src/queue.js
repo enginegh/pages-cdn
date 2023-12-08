@@ -1,15 +1,13 @@
 import { MongoClient } from "mongodb";
 import logger from "./lib/logger.js";
 
+const ONE_HOUR_IN_MS = 3600000;
+
 export default class MongoQueue {
     constructor(mongo, queuedb, storagedb) {
         this.mongo = mongo;
-        this.queuedb = mongo
-            .db(queuedb.split(":")[0])
-            .collection(queuedb.split(":")[1]);
-        this.storagedb = mongo
-            .db(storagedb.split(":")[0])
-            .collection(storagedb.split(":")[1]);
+        this.queuedb = this.getCollection(mongo, queuedb);
+        this.storagedb = this.getCollection(mongo, storagedb);
 
         this.pendingFilter = {
             $or: [
@@ -18,6 +16,12 @@ export default class MongoQueue {
             ],
         };
     }
+
+    getCollection = (mongo, dbString) => {
+        return mongo
+            .db(dbString.split(":")[0])
+            .collection(dbString.split(":")[1]);
+    };
 
     ensureIndexes = async () => {
         await this.queuedb.createIndex({ spotify: 1 }, { unique: true });
@@ -31,35 +35,33 @@ export default class MongoQueue {
             this.pendingFilter,
             {
                 $set: {
-                    locked_until: new Date(Date.now() + 3600000),
+                    locked_until: new Date(Date.now() + ONE_HOUR_IN_MS),
                 },
             },
             { sort: { _id: 1 }, returnDocument: "after" },
         );
 
-        if (doc) {
-            if (!doc.spotify && !doc.isrc) {
+
+
+        if (doc && !doc.redownload) {
+            const query = {};
+
+            if (doc.spotify) {
+                query.spotify = doc.spotify;
+            } else if (doc.isrc) {
+                query.isrc = doc.isrc;
+            } else {
                 logger.warn(`Invalid doc: ${JSON.stringify(doc)}`);
                 return this.deleteAndNext(doc._id);
             }
 
-            if (!doc.redownload) {
-                const query = {};
-
-                if (doc.spotify) {
-                    query.spotify = doc.spotify;
-                } else if (doc.isrc) {
-                    query.isrc = doc.isrc;
-                }
-
-                const existing = await this.storagedb.findOne(query);
-                if (existing) {
-                    logger.debug(
-                        `Skipping ${doc.spotify ?? doc.isrc
-                        } because it already exists in storage`,
-                    );
-                    return this.deleteAndNext(doc._id);
-                }
+            const existing = await this.storagedb.findOne(query);
+            if (existing) {
+                logger.debug(
+                    `Skipping ${doc.spotify ?? doc.isrc
+                    } because it already exists in storage`,
+                );
+                return this.deleteAndNext(doc._id);
             }
         }
         return doc;
@@ -161,22 +163,14 @@ export default class MongoQueue {
         await this.queuedb.deleteOne({ _id: id });
     };
 
-    close = async (exit = false) => {
+    close = async () => {
         await this.mongo.close();
-        if (exit) {
-            logger.debug("Exiting");
-            process.exit(0);
-        }
     };
 
     static async fromMongoURI(uri, queuedb, storagedb) {
         const mongo = new MongoClient(uri);
-        try {
-            await mongo.connect();
-        } catch (error) {
-            logger.error(error);
-            process.exit(1);
-        }
+
+        await mongo.connect();
 
         const mongoqueue = new MongoQueue(mongo, queuedb, storagedb);
         await mongoqueue.ensureIndexes();

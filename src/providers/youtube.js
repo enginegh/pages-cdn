@@ -8,6 +8,7 @@ import {
 } from "../lib/query.js";
 import config from "../lib/config.js";
 import { compareTwoStrings } from "string-similarity";
+import { deleteFile } from "../lib/utils.js";
 
 export class YoutubeDownloader {
     static async download(url, fileName, timeout = 8 * 60) {
@@ -24,21 +25,25 @@ export class YoutubeDownloader {
         const stream = ytdl.downloadFromInfo(info, { format });
         fileName = `${fileName}.${format.container}`;
 
-        const savePromise = new Promise((resolve, reject) => {
+        let timer;
+        return await new Promise((resolve, reject) => {
             stream
                 .pipe(createWriteStream(fileName))
-                .on("finish", () => resolve(fileName))
-                .on("error", reject);
+                .on("finish", () => {
+                    resolve(fileName);
+                })
+                .on("error", (err) => {
+                    reject(err);
+                });
+            
+            timer = setTimeout(() => {
+                stream.destroy();
+                deleteFile(fileName);
+                reject(new Error("Download timed out"));
+            }, timeout * 1000);
+        }).finally(() => {
+            clearTimeout(timer);
         });
-
-        const timeoutPromise = new Promise((resolve, reject) => {
-            setTimeout(
-                () => reject(new Error("Youtube download timed out")),
-                timeout * 1000,
-            );
-        });
-
-        return Promise.race([savePromise, timeoutPromise]);
     }
 }
 

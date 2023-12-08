@@ -7,6 +7,10 @@ import MongoQueue from "./queue.js";
 import axios from "axios";
 import config from "./lib/config.js";
 
+const DEFAULT_CONCURRENCY = 1;
+const DEFAULT_TIMEOUT_MINUTES = 15;
+const DEFAULT_LIMIT = 1;
+
 async function main() {
     logger.info("Starting");
 
@@ -18,9 +22,9 @@ async function main() {
     );
 
     const queue = new PQueue({
-        concurrency: config.concurrency || 1,
+        concurrency: config.concurrency || DEFAULT_CONCURRENCY,
         autoStart: false,
-        timeout: (config.timeout || 15) * 60 * 1000, // 15 minutes (in ms)
+        timeout: (config.timeout || DEFAULT_TIMEOUT_MINUTES) * 60 * 1000,
         throwOnTimeout: false,
     });
 
@@ -29,10 +33,11 @@ async function main() {
 
     const stats = await mongoqueue.stats();
 
-    let limit = config.limit || 1;
+    let limit = config.limit || DEFAULT_LIMIT;
     logger.info(
         `Total: ${stats.total}, Pending: ${stats.pending}, Locked: ${stats.locked}, Limit: ${limit}, Concurrency: ${queue.concurrency}`,
     );
+
     while (limit) {
         const doc = await mongoqueue.next();
         if (!doc) {
@@ -44,8 +49,6 @@ async function main() {
             let success = false;
             try {
                 const { track, filePath } = await downloader.download(doc);
-                // store track.uri, track.external_ids.isrc, and filePath without downloader.download_dir
-                // skip if locked_until is in the past
 
                 if (doc.locked_until > new Date()) {
                     const manifestEntry = {
@@ -62,28 +65,29 @@ async function main() {
                     unlinkSync(filePath);
                 }
             } catch (error) {
-                if (
-                    error.message === "invalid id" ||
-                    error.message.startsWith("Non existing id")
-                ) {
-                    logger.error(
-                        `Skipping '${doc.spotify}' because it has an invalid id`,
-                    );
-                    await mongoqueue.delete(doc._id);
-                } else if (
-                    error.message.startsWith("File duration is too long")
-                ) {
-                    logger.error(
-                        `Skipping '${doc.spotify}' because duration is too long`,
-                    );
-                    await mongoqueue.delete(doc._id);
-                } else {
-                    if (config.ignore_errors) {
-                        logger.warn(error.message);
+                switch (error.message) {
+                    case "invalid id":
+                    // starts with "Non existing id"
+                    case error.message.startsWith("Non existing id") && error.message:
+                        logger.error(
+                            `Skipping '${doc.spotify}' because it has an invalid id`,
+                        );
                         await mongoqueue.delete(doc._id);
-                    } else {
-                        logger.error(error.message);
-                    }
+                        break;
+                    case "File duration is too long":
+                        logger.error(
+                            `Skipping '${doc.spotify}' because duration is too long`,
+                        );
+                        await mongoqueue.delete(doc._id);
+                        break;
+                    default:
+                        if (config.ignore_errors) {
+                            logger.warn(error.message);
+                            await mongoqueue.delete(doc._id);
+                        } else {
+                            logger.error(error.message);
+                        }
+                        break;
                 }
             } finally {
                 if (!success) {
@@ -96,20 +100,18 @@ async function main() {
 
     if (queue.size === 0) {
         logger.info("No tracks to download, exiting");
-        await mongoqueue.close(true);
+        return await mongoqueue.close();
     }
 
-    // print queue length
     logger.info(`Waiting for downloads to finish: ${queue.size}`);
     queue.start();
     await queue.onIdle();
     logger.debug("Queue finished");
-    // print downloads count
     logger.info(`Downloaded ${succeeded.length} tracks`);
 
     if (succeeded.length === 0) {
-        logger.info("No tracks downloaded, exiting");
-        await mongoqueue.close(true);
+        logger.info("No tracks to upload, exiting");
+        return await mongoqueue.close();
     }
 
     logger.debug("Initializing cpages");
@@ -152,7 +154,7 @@ async function main() {
     }
 
     logger.info("Finished");
-    await mongoqueue.close(true);
+    return await mongoqueue.close();
 }
 
 main();
