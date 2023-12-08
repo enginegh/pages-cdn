@@ -1,0 +1,78 @@
+name: Pods
+
+on:
+  workflow_dispatch:
+    inputs:
+      pods:
+        type: number
+        description: Number of pods to use
+        required: true
+        default: 1
+
+
+env:
+    DEBUG: ${{ vars.DEBUG }}
+
+jobs:
+    pre:
+        runs-on: ubuntu-latest
+        outputs:
+            pods: ${{ steps.set-pods.outputs.pods }}
+        steps:
+          - name: Set pods count
+            id: set-pods
+            run: |
+              num=${{ inputs.pods }}
+
+              if ! [[ $num =~ ^[0-9]+$ ]]; then
+                  echo "Error: Please enter a valid positive integer."
+                  exit 1
+              fi
+
+              output="["
+              for ((i=1; i<=num; i++)); do
+                  output+=" $i"
+                  if ((i < num)); then
+                      output+=','
+                  fi
+              done
+              output+=" ]"
+
+              echo pods=$output >> $GITHUB_OUTPUT
+        
+
+    pod:
+        needs: pre
+        strategy:
+          fail-fast: false
+          matrix:
+            pods: ${{ fromJson(needs.pre.outputs.pods) }}
+
+        name: Pod
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Repo
+              uses: actions/checkout@v3
+              with:
+                  repository: enginegh/pages-cdn
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v3
+              id: setup-node
+              with:
+                  cache: npm
+
+            - name: Install dependencies
+              run: |
+                  npm install
+
+            - name: Setup FFmpeg
+              uses: FedericoCarboni/setup-ffmpeg@v2
+
+            - name: Run test script
+              timeout-minutes: 60
+              env:
+                  CONFIG: ${{ secrets.CONFIG }}
+                  NODE_OPTIONS: --openssl-legacy-provider
+              run: |
+                  npm start

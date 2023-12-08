@@ -78,7 +78,13 @@ async function main() {
                     );
                     await mongoqueue.delete(doc._id);
                 } else {
-                    logger.error(error.message);
+                    if (config.ignore_errors) {
+                        logger.warn(error.message);
+                        await mongoqueue.delete(doc._id);
+                    } else {
+                        logger.error(error.message);
+                    }
+                    
                 }
             } finally {
                 if (!success) {
