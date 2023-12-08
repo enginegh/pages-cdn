@@ -11,15 +11,15 @@ import { compareTwoStrings } from "string-similarity";
 
 export class YoutubeDownloader {
     static async download(url, fileName) {
-        const { formats } = await ytdl.getInfo(url, {
+        const info = await ytdl.getInfo(url, {
             requestOptions: {
                 headers: {
                     cookie: config?.youtube?.cookies || "",
                 },
             },
         });
-        const format = ytdl.chooseFormat(formats, { quality: "highestaudio" });
-        const stream = ytdl.downloadFromInfo({ formats }, { format });
+        const format = ytdl.chooseFormat(info.formats, { quality: "highestaudio" });
+        const stream = ytdl.downloadFromInfo(info, { format });
         fileName = `${fileName}.${format.container}`;
         return YoutubeDownloader.saveStream(stream, fileName);
     }
