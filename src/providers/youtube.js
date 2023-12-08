@@ -10,7 +10,7 @@ import config from "../lib/config.js";
 import { compareTwoStrings } from "string-similarity";
 
 export class YoutubeDownloader {
-    static async download(url, fileName) {
+    static async download(url, fileName, timeout = 8 * 60) {
         const info = await ytdl.getInfo(url, {
             requestOptions: {
                 headers: {
@@ -23,16 +23,19 @@ export class YoutubeDownloader {
         });
         const stream = ytdl.downloadFromInfo(info, { format });
         fileName = `${fileName}.${format.container}`;
-        return YoutubeDownloader.saveStream(stream, fileName);
-    }
 
-    static saveStream(stream, fileName) {
-        return new Promise((resolve, reject) => {
+        const savePromise = new Promise((resolve, reject) => {
             stream
                 .pipe(createWriteStream(fileName))
                 .on("finish", () => resolve(fileName))
                 .on("error", reject);
         });
+
+        const timeoutPromise = new Promise((resolve, reject) => {
+            setTimeout(() => reject(new Error("Youtube download timed out")), timeout * 1000);
+        });
+
+        return Promise.race([savePromise, timeoutPromise]);
     }
 }
 
