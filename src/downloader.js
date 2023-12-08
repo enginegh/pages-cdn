@@ -35,13 +35,19 @@ export default class TrackDownloader {
             throw new Error(`invalid id`);
         }
 
-        const basename = path.resolve(
-            path.join(
-                this.download_dir,
-                `${track.name} - ${track.artists[0].name}`.replace(
-                    /[\/\\?%*:|"<>#]/g,
-                    "-",
-                ),
+        const basedir = path.resolve(
+            path.join(this.download_dir, id.replace(/[\/\\?%*:|"<>#]/g, "-")),
+        );
+
+        if (!existsSync(basedir)) {
+            mkdirSync(basedir, { recursive: true });
+        }
+
+        const basename = path.join(
+            basedir,
+            `${track.name} - ${track.artists[0].name}`.replace(
+                /[\/\\?%*:|"<>#]/g,
+                "-",
             ),
         );
 

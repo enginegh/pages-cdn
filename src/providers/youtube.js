@@ -32,7 +32,10 @@ export class YoutubeDownloader {
         });
 
         const timeoutPromise = new Promise((resolve, reject) => {
-            setTimeout(() => reject(new Error("Youtube download timed out")), timeout * 1000);
+            setTimeout(
+                () => reject(new Error("Youtube download timed out")),
+                timeout * 1000,
+            );
         });
 
         return Promise.race([savePromise, timeoutPromise]);
