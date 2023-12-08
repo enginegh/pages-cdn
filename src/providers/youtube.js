@@ -18,7 +18,9 @@ export class YoutubeDownloader {
                 },
             },
         });
-        const format = ytdl.chooseFormat(info.formats, { quality: "highestaudio" });
+        const format = ytdl.chooseFormat(info.formats, {
+            quality: "highestaudio",
+        });
         const stream = ytdl.downloadFromInfo(info, { format });
         fileName = `${fileName}.${format.container}`;
         return YoutubeDownloader.saveStream(stream, fileName);
@@ -52,7 +54,9 @@ export class YoutubeLite extends YoutubeDownloader {
     static async search(track) {
         const query = getLiteQueryFromMetadata(track);
         const results = await ytsr(query, { limit: 20 });
-        const video = results.items.filter((item) => item.isLive === false).find((item) => item.type === "video");
+        const video = results.items
+            .filter((item) => item.isLive === false)
+            .find((item) => item.type === "video");
         if (!video) {
             throw new Error(`[YoutubeLite] No results found for ${query}`);
         }

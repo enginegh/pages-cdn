@@ -45,7 +45,6 @@ export default class TrackDownloader {
             ),
         );
 
-        
         let filePath;
         for (const provider of this.providers) {
             try {

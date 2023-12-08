@@ -1,5 +1,4 @@
-import { sleep } from './utils.js';
-
+import { sleep } from "./utils.js";
 
 export const addArtist = async (spotify, queue, artist) => {
     const albums = await spotify.fetchArtistAlbums(artist);
@@ -43,7 +42,9 @@ export default async function ArtistsScraper(spotify, queue) {
 
     for (const playlist of featuredPlaylists) {
         const tracks = await spotify.fetchTracksFromPlaylist(playlist.id);
-        console.log(`Found ${tracks.length} tracks for playlist "${playlist.name}"`);
+        console.log(
+            `Found ${tracks.length} tracks for playlist "${playlist.name}"`,
+        );
 
         for (const track of tracks) {
             for (const artist of track.artists) {

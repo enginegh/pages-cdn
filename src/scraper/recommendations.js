@@ -1,7 +1,10 @@
 import { sleep, chunkArray } from "./utils.js";
 
 export async function addRecommendations({ spotify, queue, tracks, artists }) {
-    const recommendations = await spotify.fetchRecommendations({ seed_tracks: tracks, seed_artists: artists });
+    const recommendations = await spotify.fetchRecommendations({
+        seed_tracks: tracks,
+        seed_artists: artists,
+    });
 
     const tasks = recommendations.map((track) => {
         return { spotify: track.id };
@@ -27,14 +30,16 @@ export default async function RecommendationsScraper(spotify, queue) {
 
     for (const playlist of featuredPlaylists) {
         const tracks = await spotify.fetchTracksFromPlaylist(playlist.id);
-        console.log(`Found ${tracks.length} tracks for playlist "${playlist.name}"`);
+        console.log(
+            `Found ${tracks.length} tracks for playlist "${playlist.name}"`,
+        );
 
         const randomizedTracks = tracks.sort(() => Math.random() - 0.5);
         const trackChunks = chunkArray(randomizedTracks, 5);
 
         for (const chunk of trackChunks) {
             const tracks = chunk.map((track) => track.id);
-            await addRecommendations({ spotify, queue, tracks })
+            await addRecommendations({ spotify, queue, tracks });
             await sleep(1);
         }
 
@@ -46,18 +51,21 @@ export default async function RecommendationsScraper(spotify, queue) {
         }
 
         console.log(`Found ${artists.size} artists`);
-        const randomizedArtists = Array.from(artists).sort(() => Math.random() - 0.5);
+        const randomizedArtists = Array.from(artists).sort(
+            () => Math.random() - 0.5,
+        );
         const artistChunks = chunkArray(randomizedArtists, 5);
 
         for (const chunk of artistChunks) {
             const artists = chunk.map((artist) => artist.id);
-            await addRecommendations({ spotify, queue, artists })
+            await addRecommendations({ spotify, queue, artists });
             await sleep(1);
-        };
+        }
 
-
-        console.log(`Scraping completed for Playlist: ${playlist.name}, Tracks: ${tracks.length}`);
+        console.log(
+            `Scraping completed for Playlist: ${playlist.name}, Tracks: ${tracks.length}`,
+        );
 
         await sleep(5);
-    };
-};
+    }
+}

@@ -19,9 +19,9 @@ const scrape = async (playlistId) => {
         .collection(config.mongodb.queue_db.split(":")[1]);
 
     const spotify = await ScraperSpotify.fromCredentials(
-            config.spotify.client_id,
-            config.spotify.client_secret,
-        );
+        config.spotify.client_id,
+        config.spotify.client_secret,
+    );
 
     const tracks = await spotify.getTracksFromPlaylist(playlistId);
     const albums = await spotify.getAlbumsAndArtistAlbums(tracks);
@@ -58,7 +58,9 @@ const scrape = async (playlistId) => {
 
 if (argv.list) {
     const json = {};
-    json.playlists = Array.from(new Set(readFileSync("playlists.txt").toString().split("\n")));
+    json.playlists = Array.from(
+        new Set(readFileSync("playlists.txt").toString().split("\n")),
+    );
     console.log(`matrix=${JSON.stringify(json)}`);
 } else if (argv.id || argv._[0]) {
     await scrape(argv.id);

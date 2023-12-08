@@ -40,7 +40,7 @@ export default class MongoQueue {
         if (!doc.spotify && !doc.isrc) {
             logger.warn(`Invalid doc: ${JSON.stringify(doc)}`);
             return this.deleteAndNext(doc._id);
-        } 
+        }
 
         if (doc && !doc.redownload) {
             const query = {};
@@ -59,7 +59,7 @@ export default class MongoQueue {
                     } because it already exists in storage`,
                 );
                 return this.deleteAndNext(doc._id);
-            };
+            }
         }
         return doc;
     };

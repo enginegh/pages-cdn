@@ -1,14 +1,13 @@
 name: Pods
 
 on:
-  workflow_dispatch:
-    inputs:
-      pods:
-        type: number
-        description: Number of pods to use
-        required: true
-        default: 1
-
+    workflow_dispatch:
+        inputs:
+            pods:
+                type: number
+                description: Number of pods to use
+                required: true
+                default: 1
 
 env:
     DEBUG: ${{ vars.DEBUG }}
@@ -19,34 +18,33 @@ jobs:
         outputs:
             pods: ${{ steps.set-pods.outputs.pods }}
         steps:
-          - name: Set pods count
-            id: set-pods
-            run: |
-              num=${{ inputs.pods }}
+            - name: Set pods count
+              id: set-pods
+              run: |
+                  num=${{ inputs.pods }}
 
-              if ! [[ $num =~ ^[0-9]+$ ]]; then
-                  echo "Error: Please enter a valid positive integer."
-                  exit 1
-              fi
-
-              output="["
-              for ((i=1; i<=num; i++)); do
-                  output+=" $i"
-                  if ((i < num)); then
-                      output+=','
+                  if ! [[ $num =~ ^[0-9]+$ ]]; then
+                      echo "Error: Please enter a valid positive integer."
+                      exit 1
                   fi
-              done
-              output+=" ]"
 
-              echo pods=$output >> $GITHUB_OUTPUT
-        
+                  output="["
+                  for ((i=1; i<=num; i++)); do
+                      output+=" $i"
+                      if ((i < num)); then
+                          output+=','
+                      fi
+                  done
+                  output+=" ]"
+
+                  echo pods=$output >> $GITHUB_OUTPUT
 
     pod:
         needs: pre
         strategy:
-          fail-fast: false
-          matrix:
-            pods: ${{ fromJson(needs.pre.outputs.pods) }}
+            fail-fast: false
+            matrix:
+                pods: ${{ fromJson(needs.pre.outputs.pods) }}
 
         name: Pod
         runs-on: ubuntu-latest

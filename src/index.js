@@ -84,7 +84,6 @@ async function main() {
                     } else {
                         logger.error(error.message);
                     }
-                    
                 }
             } finally {
                 if (!success) {

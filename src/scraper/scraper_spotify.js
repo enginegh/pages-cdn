@@ -1,4 +1,4 @@
-import Spotify from '../lib/spotify.js';
+import Spotify from "../lib/spotify.js";
 
 export default class ScraperSpotify extends Spotify {
     constructor(clientId, clientSecret) {
@@ -8,11 +8,11 @@ export default class ScraperSpotify extends Spotify {
     fetchTracksFromPlaylist = async (id) => {
         const playlist = await this.playlist(id);
         return playlist.tracks.items.map((item) => item.track);
-    }
+    };
 
     fetchArtistAlbums = async (artist) => {
         return await this.artistAllAlbums(artist.id);
-    }
+    };
 
     fetchAlbumsForTrack = async (track) => {
         const albums = new Set();
@@ -25,7 +25,7 @@ export default class ScraperSpotify extends Spotify {
         }
 
         return Array.from(albums);
-    }
+    };
 
     getAlbumsAndArtistAlbums = async (tracks) => {
         const albums = new Set();
@@ -43,7 +43,7 @@ export default class ScraperSpotify extends Spotify {
         }
 
         return Array.from(albums);
-    }
+    };
 
     fetchFeaturedPlaylists = async (country = "IN") => {
         const playlists = new Set();
@@ -60,7 +60,7 @@ export default class ScraperSpotify extends Spotify {
         } while (response.playlists.next);
 
         return Array.from(playlists);
-    }
+    };
 
     fetchCategories = async (country = "IN") => {
         const categories = new Set();
@@ -77,7 +77,7 @@ export default class ScraperSpotify extends Spotify {
         } while (response.categories.next);
 
         return Array.from(categories);
-    }
+    };
 
     fetchCategoriesPlaylists = async (category, country = "IN") => {
         const playlists = new Set();
@@ -86,15 +86,20 @@ export default class ScraperSpotify extends Spotify {
         let response = null;
 
         do {
-            response = await this.fetch(`/browse/categories/${category}/playlists`, {
-                params: { offset, limit, country: country },
-            });
-            response.playlists.items.forEach((item) => item && playlists.add(item));
+            response = await this.fetch(
+                `/browse/categories/${category}/playlists`,
+                {
+                    params: { offset, limit, country: country },
+                },
+            );
+            response.playlists.items.forEach(
+                (item) => item && playlists.add(item),
+            );
             offset += limit;
         } while (response.playlists.next);
 
         return Array.from(playlists);
-    }
+    };
 
     static async fromCredentials(client_id, client_secret) {
         let token = Spotify.getTokenFromCache();

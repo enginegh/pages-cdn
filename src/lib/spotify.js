@@ -1,7 +1,7 @@
 import axios from "axios";
 import { existsSync, writeFileSync, readFileSync } from "fs";
 import logger from "./logger.js";
-import * as rax from 'retry-axios';
+import * as rax from "retry-axios";
 
 const DEFAULT_CACHE_PATH = ".spotify.cache";
 
@@ -16,7 +16,11 @@ export default class Spotify {
             instance: this.session,
             retry: 3,
             retryDelay: 1000,
-            statusCodesToRetry: [[100, 199], [400, 400], [500, 599]],
+            statusCodesToRetry: [
+                [100, 199],
+                [400, 400],
+                [500, 599],
+            ],
         };
         rax.attach(this.session);
     }
@@ -98,20 +102,23 @@ export default class Spotify {
             .catch((error) => {
                 if (error.response) {
                     if (error.response.status === 429) {
-                        const retryAfter = error.response.headers['retry-after'];
+                        const retryAfter =
+                            error.response.headers["retry-after"];
                         if (retryAfter) {
-                            const retryAfterSeconds = parseInt(retryAfter, 10) + 2;
-                            logger.info(`Spotify API rate limit exceeded. Retrying after ${retryAfterSeconds} seconds`);
+                            const retryAfterSeconds =
+                                parseInt(retryAfter, 10) + 2;
+                            logger.info(
+                                `Spotify API rate limit exceeded. Retrying after ${retryAfterSeconds} seconds`,
+                            );
                             return new Promise((resolve) => {
                                 setTimeout(resolve, retryAfterSeconds * 1000);
                             }).then(() => this.fetch(path, params));
                         }
-                    } else
-                        if (error.response.data?.error?.message) {
-                            throw new Error(error.response.data.error.message);
-                        } else {
-                            throw new Error(error.response.data);
-                        }
+                    } else if (error.response.data?.error?.message) {
+                        throw new Error(error.response.data.error.message);
+                    } else {
+                        throw new Error(error.response.data);
+                    }
                 } else {
                     throw new Error(error.message);
                 }

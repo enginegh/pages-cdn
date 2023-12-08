@@ -3,9 +3,11 @@ import { sleep } from "./utils.js";
 export const addPlaylist = async (spotify, queue, playlist) => {
     const tracks = await spotify.fetchTracksFromPlaylist(playlist.id);
 
-    const tasks = tracks.filter((track) => track && track.id).map((track) => {
-        return { spotify: track.id };
-    });
+    const tasks = tracks
+        .filter((track) => track && track.id)
+        .map((track) => {
+            return { spotify: track.id };
+        });
 
     try {
         const result = await queue.insertMany(tasks, { ordered: false });
@@ -18,9 +20,8 @@ export const addPlaylist = async (spotify, queue, playlist) => {
                 `[${tasks.length}]\tPlaylist: ${playlist.name} \t-> Inserted ${error.insertedCount} tracks`,
             );
         } else console.error(error);
-    };
+    }
 };
-
 
 export default async function FeaturedPlaylistsScraper(spotify, queue) {
     const playlists = await spotify.fetchFeaturedPlaylists();
