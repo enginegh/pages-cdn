@@ -27,11 +27,11 @@ export default class TrackDownloader {
         } else if (isrc) {
             track = await this.spotify.isrcSearch(isrc);
         } else {
-            throw new Error(`Invalid id: ${id}`);
+            throw new Error("invalid id");
         }
 
         if (!track.name) {
-            throw new Error(`Invalid track name for id: ${id}`);
+            throw new Error("invalid id");
         }
 
         const basedir = path.resolve(
