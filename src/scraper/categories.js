@@ -6,10 +6,15 @@ export default async function CategoriesScraper(spotify, queue) {
     console.log(`Found ${categories.length} categories`);
 
     for (const category of categories) {
-        const playlists = await spotify.fetchCategoriesPlaylists(category.id);
-        console.log(
-            `Found ${playlists.length} playlists for category "${category.name}"`,
-        );
+        try {
+            const playlists = await spotify.fetchCategoriesPlaylists(category.id);
+            console.log(
+                `Found ${playlists.length} playlists for category "${category.name}"`,
+                );
+        } catch (error) {
+            console.log(`Error fetching playlists for category "${category.name}" (${category.id}): ${error.message}`);
+            continue;
+        }
 
         for (const playlist of playlists) {
             await addPlaylist(spotify, queue, playlist);
