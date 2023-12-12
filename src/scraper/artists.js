@@ -5,7 +5,13 @@ export const addArtist = async (spotify, queue, artist) => {
     console.log(`Found ${albums.length} albums for artist "${artist.name}"`);
 
     for (const album of albums) {
-        const tracks = await spotify.albumTracks(album.id);
+        let tracks;
+        try {
+            tracks = await spotify.albumTracks(album.id);
+        } catch (error) {
+            console.log(`Error fetching tracks for album "${album.name}" (${album.id}): ${error.message}`);
+            continue;
+        }
 
         const tasks = tracks.map((track) => {
             return { spotify: track.id };
