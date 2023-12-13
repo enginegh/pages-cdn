@@ -6,14 +6,15 @@ import config from "../config.js";
 import { deleteFile, videoMetadata, calculateAudioBitrate } from "./utils.js";
 import { MAX_ASSET_SIZE as CFPAGES_MAX_ASSET_SIZE } from "../../cpages/constants.js";
 
-const FFMPEG_TIMEOUT = config.ffmpeg_timeout || 8;
+const FFMPEG_TIMEOUT = config.ffmpeg_timeout;
 const MAX_ASSET_SIZE = CFPAGES_MAX_ASSET_SIZE - 1 * 1024 * 1024; // 1MB for metadata
+const MAX_DURATION = config.max_song_duration;
 
 class AudioConverter {
     constructor(max_asset_size, ffmpeg_timeout, max_duration) {
         this.max_asset_size = max_asset_size || MAX_ASSET_SIZE;
         this.ffmpeg_timeout = ffmpeg_timeout || FFMPEG_TIMEOUT;
-        this.max_duration = max_duration || 34 * 60;
+        this.max_duration = max_duration || MAX_DURATION;
         this.ffmpeg_settings = {
             mp3: {
                 audioCodec: "libmp3lame",
@@ -86,7 +87,7 @@ class AudioConverter {
         // reject if duration is bigger than 34 minutes
         if (metadata.format.duration > this.max_duration) {
             throw new Error(
-                `File duration is too long: ${metadata.format.duration}, max duration ${this.max_duration}`,
+                `Audio duration is too long: ${metadata.format.duration}, max duration ${this.max_duration}`,
             );
         }
 

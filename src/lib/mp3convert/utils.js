@@ -1,6 +1,5 @@
 import Ffmpeg from "fluent-ffmpeg";
-import path from "path";
-import { renameSync, unlinkSync } from "fs";
+import { unlinkSync } from "fs";
 
 export const calculateAudioBitrate = (requiredSize, duration, max = 320) => {
     // return in format 128, 256, 320

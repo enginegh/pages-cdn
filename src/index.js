@@ -74,7 +74,7 @@ async function main() {
                         );
                         await mongoqueue.delete(doc._id);
                         break;
-                    case "File duration is too long":
+                    case error.message.startsWith("Audio duration is too long") && error.message:
                         logger.error(
                             `Skipping '${doc.spotify}' because duration is too long`,
                         );

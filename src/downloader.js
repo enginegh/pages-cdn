@@ -53,7 +53,7 @@ export default class TrackDownloader {
                 filePath = await provider.download(result, basename);
                 break;
             } catch (error) {
-                logger.debug(`Error downloading track: ${error}`);
+                logger.debug(error.message);
             }
         }
 
