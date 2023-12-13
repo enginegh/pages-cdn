@@ -1,6 +1,6 @@
 import logger from "./lib/logger.js";
 import Spotify from "./lib/spotify.js";
-import DeezerDownloader from "./providers/deezer.js";
+import deezer from "./providers/deezer.js";
 import { Youtube, YoutubeLite, YoutubeMusic } from "./providers/youtube.js";
 import ID3Writer from "./lib/id3writer.js";
 import path from "path";
@@ -81,10 +81,7 @@ export default class TrackDownloader {
             config.spotify.client_id,
             config.spotify.client_secret,
         );
-        const deezer = new DeezerDownloader(
-            config.deezer.cookies,
-            config.deezer.proxy,
-        );
+
         const ytmusic = await YoutubeMusic.initialize();
 
         const download_dir = path.resolve(config.download_dir || "./tracks");
@@ -93,7 +90,7 @@ export default class TrackDownloader {
         }
         ensureDirectoryExists(download_dir);
 
-        const providers = [Odesli, ytmusic, deezer, Youtube, YoutubeLite];
+        const providers = [Odesli, deezer, ytmusic, Youtube, YoutubeLite];
         return new TrackDownloader(spotify, providers, download_dir);
     };
 }
