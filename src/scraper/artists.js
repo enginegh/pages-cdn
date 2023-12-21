@@ -9,7 +9,9 @@ export const addArtist = async (spotify, queue, artist) => {
         try {
             tracks = await spotify.albumTracks(album.id);
         } catch (error) {
-            console.log(`Error fetching tracks for album "${album.name}" (${album.id}): ${error.message}`);
+            console.log(
+                `Error fetching tracks for album "${album.name}" (${album.id}): ${error.message}`,
+            );
             continue;
         }
 

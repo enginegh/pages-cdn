@@ -41,8 +41,6 @@ export default class MongoQueue {
             { sort: { _id: 1 }, returnDocument: "after" },
         );
 
-
-
         if (doc && !doc.redownload) {
             const query = {};
 
@@ -58,7 +56,8 @@ export default class MongoQueue {
             const existing = await this.storagedb.findOne(query);
             if (existing) {
                 logger.debug(
-                    `Skipping ${doc.spotify ?? doc.isrc
+                    `Skipping ${
+                        doc.spotify ?? doc.isrc
                     } because it already exists in storage`,
                 );
                 return this.deleteAndNext(doc._id);

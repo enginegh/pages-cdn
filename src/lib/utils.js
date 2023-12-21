@@ -16,7 +16,6 @@ export const deleteFile = (filePath) => {
     }
 };
 
-
 /**
  * Sanitizes a path by replacing special characters with hyphens.
  * @param {string} path - The path to sanitize.
@@ -24,7 +23,7 @@ export const deleteFile = (filePath) => {
  */
 export const sanitizePath = (path) => {
     return path.replace(/[\/\\?%*:|"<>#]/g, "-");
-}
+};
 
 /**
  * Ensures that a directory exists. If the directory does not exist, it will be created recursively.
@@ -34,4 +33,4 @@ export const ensureDirectoryExists = (directory) => {
     if (!existsSync(directory)) {
         mkdirSync(directory, { recursive: true });
     }
-}
+};

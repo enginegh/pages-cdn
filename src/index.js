@@ -68,13 +68,16 @@ async function main() {
                 switch (error.message) {
                     case "invalid id":
                     // starts with "Non existing id"
-                    case error.message.startsWith("Non existing id") && error.message:
+                    case error.message.startsWith("Non existing id") &&
+                        error.message:
                         logger.error(
                             `Skipping '${doc.spotify}' because it has an invalid id`,
                         );
                         await mongoqueue.delete(doc._id);
                         break;
-                    case error.message.startsWith("Audio duration is too long") && error.message:
+                    case error.message.startsWith(
+                        "Audio duration is too long",
+                    ) && error.message:
                         logger.error(
                             `Skipping '${doc.spotify}' because duration is too long`,
                         );

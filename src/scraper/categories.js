@@ -7,7 +7,9 @@ export default async function CategoriesScraper(spotify, queue) {
 
     for (const category of categories) {
         try {
-            const playlists = await spotify.fetchCategoriesPlaylists(category.id);
+            const playlists = await spotify.fetchCategoriesPlaylists(
+                category.id,
+            );
             console.log(
                 `Found ${playlists.length} playlists for category "${category.name}"`,
             );
@@ -21,7 +23,9 @@ export default async function CategoriesScraper(spotify, queue) {
                 `Scraping completed for Category: ${category.name}, Playlist: ${playlists.length}`,
             );
         } catch (error) {
-            console.log(`Error fetching playlists for category "${category.name}" (${category.id}): ${error.message}`);
+            console.log(
+                `Error fetching playlists for category "${category.name}" (${category.id}): ${error.message}`,
+            );
             continue;
         }
 

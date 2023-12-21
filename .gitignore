@@ -5,3 +5,4 @@ tests/
 bun.lockb
 logs.txt
 test.js
+package-lock.json

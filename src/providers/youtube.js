@@ -26,7 +26,9 @@ export class YoutubeDownloader {
         if (format.approxDurationMs) {
             const duration = parseInt(format.approxDurationMs, 10) / 1000;
             if (duration > config.max_song_duration) {
-                throw new Error(`Audio duration is too long: ${duration}s (${url})`);
+                throw new Error(
+                    `Audio duration is too long: ${duration}s (${url})`,
+                );
             }
         }
 
@@ -43,7 +45,7 @@ export class YoutubeDownloader {
                 .on("error", (err) => {
                     reject(err);
                 });
-            
+
             timer = setTimeout(() => {
                 stream.destroy();
                 deleteFile(fileName);

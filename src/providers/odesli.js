@@ -1,56 +1,49 @@
-import axios from "axios";
 import { YoutubeDownloader } from "./youtube.js";
 import deezer from "./deezer.js";
 import logger from "../lib/logger.js";
+import SongLink from "./songlink.js";
 
-const DATA_SEARCH_REGEX = new RegExp(
-    /(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])/gm,
-);
+const songlink = new SongLink();
 
 class Odesli {
     static async search(track) {
-        const response = await axios.get(`https://song.link/s/${track.id}`);
-
-        const DATA = response.data.matchAll(DATA_SEARCH_REGEX);
-
-        if (!DATA) {
+        let response;
+        try {
+            response = await songlink.find(`https://song.link/s/${track.id}`);
+        } catch (error) {
             throw new Error(
-                `[Odesli] No data found for ${track.name} (${track.id})`,
+                `[Odesli] ${error.message} for ${track.name} (${track.id})`,
             );
         }
 
-        const links = {};
-        for (const match of DATA) {
-            links[match[2]] = match[0];
-        }
+        const platforms = response.platforms;
 
-        switch (true) {
-            case Boolean(links["music.youtube.com"]):
-                logger.debug(
-                    `[Odesli] Found Youtube Music link for ${track.name} (${track.id})`,
-                );
-                return links["music.youtube.com"];
-            case Boolean(links["www.youtube.com"]):
-                logger.debug(
-                    `[Odesli] Found Youtube link for ${track.name} (${track.id})`,
-                );
-                return links["www.youtube.com"];
-            case Boolean(links["www.deezer.com"]):
-                logger.debug(
-                    `[Odesli] Found Deezer link for ${track.name} (${track.id})`,
-                );
-                return links["www.deezer.com"];
-            default:
-                throw new Error(
-                    `[Odesli] No results found for ${track.name} (${track.id})`,
-                );
+        if (platforms.youtubeMusic) {
+            logger.debug(
+                `[Odesli] Found Youtube Music link for ${track.name} (${track.id})`,
+            );
+            return platforms.youtubeMusic.url;
+        } else if (platforms.youtube) {
+            logger.debug(
+                `[Odesli] Found Youtube link for ${track.name} (${track.id})`,
+            );
+            return platforms.youtube.url;
+        } else if (platforms.deezer) {
+            logger.debug(
+                `[Odesli] Found Deezer link for ${track.name} (${track.id})`,
+            );
+            return platforms.deezer.url;
+        } else {
+            throw new Error(
+                `[Odesli] No downloadable results found for ${track.name} (${track.id})`,
+            );
         }
     }
 
-
     static async download(url, filename) {
         switch (true) {
-            case url.startsWith("https://music.youtube.com/") || url.startsWith("https://www.youtube.com/"):
+            case url.startsWith("https://music.youtube.com/") ||
+                url.startsWith("https://www.youtube.com/"):
                 return await YoutubeDownloader.download(url, filename);
             case url.startsWith("https://www.deezer.com/"):
                 const trackId = url.split("/")[4];
