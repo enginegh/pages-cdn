@@ -9,7 +9,7 @@ class Odesli {
     static async search(track) {
         let response;
         try {
-            response = await songlink.find(`https://song.link/s/${track.id}`);
+            response = await songlink._find(`https://song.link/s/${track.id}`);
         } catch (error) {
             throw new Error(
                 `[Odesli] ${error.message} for ${track.name} (${track.id})`,

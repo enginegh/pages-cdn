@@ -6,12 +6,11 @@ class SongLink {
         this.baseUrl = baseUrl;
     }
 
-    async find_url(url) {
-        const resp = await axios.get(`${this.baseUrl}/${url}`);
-        return this.parse(resp);
+    find_url(url) {
+        return this._find(`${this.baseUrl}/${url}`);
     }
 
-    async find(url) {
+    async _find(url) {
         const resp = await axios.get(url);
         return this.parse(resp);
     }
