@@ -1,6 +1,5 @@
 import { createLogger, format, transports, addColors } from "winston";
 
-// add coloring for debug
 addColors({
     error: "red",
     warn: "yellow",
@@ -17,7 +16,7 @@ const logger = createLogger({
         })(),
         format.simple(),
         format.printf((info) => {
-            return `${info.level}: ${info.message}`;
+            return `${info.level}:\t${info.message}`;
         }),
     ),
     transports: [
@@ -26,7 +25,6 @@ const logger = createLogger({
                 all: true,
             }),
         }),
-        // log to file without coloring
         new transports.File({
             filename: "logs.txt",
         }),
